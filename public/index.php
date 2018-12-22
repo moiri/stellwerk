@@ -1,8 +1,9 @@
 <?php
 require_once "../php/AltoRouter.php";
+require_once "../php/globals.php";
 
 $router = new AltoRouter();
-$router->setBasePath('/stellwerk');
+$router->setBasePath(BASE_PATH);
 
 $router->map('GET', '/', function($router) {
     require_once __DIR__ . "/header_home.tpl";
