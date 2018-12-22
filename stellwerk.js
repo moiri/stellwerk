@@ -1,7 +1,8 @@
 const net = require('net');
 const io = require('socket.io')();
-const ECOS_HOST = 'localhost';
-const ECOS_PORT = 15471;
+const config = require('./config');
+const ECOS_HOST = config.host;
+const ECOS_PORT = config.port;
 
 const ecos_client = net.createConnection({port: ECOS_PORT, host: ECOS_HOST}, () => {
     console.log('connected to server');
