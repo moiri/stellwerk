@@ -40,10 +40,7 @@ io.on('connection', function(socket) {
             footer = res[1];
         }
         else
-        {
             console.log("bad response format: " + data.toString());
-            return;
-        }
 
         f = regex_footer.exec(footer);
         if(f !== null && f.length === 4 && f[1] === 'END')
@@ -52,10 +49,7 @@ io.on('connection', function(socket) {
                 error: f[3]
             };
         else
-        {
             console.log("bad footer format: " + footer);
-            return;
-        }
         if(h = regex_header_event.exec(header))
         {
             if(h.length === 3)
@@ -74,10 +68,7 @@ io.on('connection', function(socket) {
                 };
         }
         else
-        {
             console.log("bad header format: " + header);
-            return;
-        }
         socket.emit('ecos_event', {
             msg: data.toString(),
             id: message_id,
