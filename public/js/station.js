@@ -1,355 +1,461 @@
-function Station(row, col, is_editable)
+class EcosCom
 {
-    var me = this;
-    me._new_item_id = 0;
-    me.trackItems = [];
-    me.trackContainers = [];
-    me._is_editable = is_editable;
-    me.config = [];
-    me._col_count = col;
-    me._row_count = row;
-    me._item_size = 64;
-
-    function update_db(item, position, cb, remove)
+    constructor()
     {
-        $.post(BASE_PATH + '/update_instance', {
-            'id': item.get_id(),
-            'id_track_item': item.get_type(),
-            'id_station': ID_STATION,
-            'angle': item.get_angle(),
-            'position': position,
-            'remove': remove
-        }, function(data) {
-            if(data.res)
-                cb();
-        }, 'json');
+        this._socket = io('http://' + IP + ':3000');
+        this._reply_queue = [];
+        this._event_queue = [];
+        this._socket.on('ecos_reply', (data) => {
+            console.log(data);
+            if(data.message_id in this._reply_queue)
+                this._reply_queue[data.message_id](data.body, data.err);
+        });
+
+        this._socket.on('ecos_event', (data) => {
+            console.log(data);
+            if(data.header.cmd in this._event_queue)
+                this._event_queue[data.header.cmd](data.body, data.err);
+        });
     }
 
-    function update_container_item(container, item)
+
+    send_cmd(cmd, id, args, cb)
     {
-        container.set_track_item(item);
-        if(me._is_editable)
-        {
-            item.register_event('dragstart', grab_track_item, container.get_position());
-            item.register_event('dblclick', rotate_track_item, container.get_position());
-            item.register_event('dragleave', leave_item);
-            item.register_event('dragover', enter_item);
-            item.register_event('drop', drop_ecos_item);
-        }
-        item.set_draggable(me._is_editable);
+        this._socket.emit('ecos_cmd', {
+            cmd: cmd,
+            id: id,
+            args: args
+        }, (id) => {
+            this._reply_queue[id] = cb;
+        });
+    }
+}
+
+class Station
+{
+    constructor(rows, cols)
+    {
+        this._row_count = rows;
+        this._col_count = cols;
+        this._item_size = 64;
+        this._ecos = new EcosCom();
     }
 
-    function drop_track_item(e, container)
+    add_tracks(data)
     {
-        e.preventDefault();
-        var pos = e.originalEvent.dataTransfer.getData("track-item-position");
-        var type = e.originalEvent.dataTransfer.getData("track-item-type");
-        if(pos === "" || type === "") return;
-        var trackItem = null;
-        var old_container = null;
-        if(pos === "null")
-        {
-            me._new_item_id++;
-            trackItem = new TrackItem(me._new_item_id, type, 0);
-        }
-        else
-        {
-            old_container = me.trackContainers[pos];
-            trackItem = old_container.get_track_item();
-            old_container.clear_track_item();
-        }
-        update_db(trackItem, container.get_position(), function() {
-            update_container_item(container, trackItem);
-        }, true);
-    }
+        data.forEach((item, index) => {
+            var trackItem = this.create_track_item(item.id, item.id_track_item,
+                item.angle, item.position);
 
-    function drop_ecos_item(e, item)
-    {
-        e.preventDefault();
-        var id = e.originalEvent.dataTransfer.getData("ecos-item-id");
-        var addr = e.originalEvent.dataTransfer.getData("ecos-item-addr");
-        if(id === "" || addr === "" || !item.is_droppable()) return;
-        $.post(BASE_PATH + '/update_instance_ecos', {
-            'id': item.get_id(),
-            'id_station': ID_STATION,
-            'ecos_id': id,
-            'ecos_addr': addr
-        }, function(data) {
-            if(data.res)
+            if(TrackContainer.grid[item.position] === void 0)
             {
-                item.dragleave();
-                item.set_wait_state();
+                return;
             }
-        }, 'json');
+            TrackContainer.grid[item.position].set_track_item(trackItem);
+
+            if(item.ecos_id !== null && item.ecos_addr !== null)
+                trackItem.set_wait_state();
+        });
     }
 
-    function grab_track_item(e, item, pos)
+    build_grid($target)
     {
-        e.originalEvent.dataTransfer.setData("track-item-position", pos);
-        e.originalEvent.dataTransfer.setData("track-item-type", item.get_type());
-    }
-
-    function rotate_track_item(e, item, pos)
-    {
-        var angle = item.get_angle();
-        angle += 90;
-        if(angle >= 360)
-            angle = 0;
-        item.set_angle(angle);
-        update_db(item, pos, function() {
-            item.rotate(angle);
-        }, false);
-    }
-
-    function enter_item(e, item)
-    {
-        e.preventDefault();
-        if(!e.originalEvent.dataTransfer.getData("ecos-item-id"))
-            return;
-        item.dragover();
-    }
-
-    function leave_item(e, item)
-    {
-        e.preventDefault();
-        if(!e.originalEvent.dataTransfer.getData("ecos-item-id"))
-            return;
-        item.dragleave();
-    }
-
-    function enter_container(e, container)
-    {
-        e.preventDefault();
-        if(!e.originalEvent.dataTransfer.getData("track-item-position"))
-            return;
-        container.dragover();
-    }
-
-    function leave_container(e, container)
-    {
-        e.preventDefault();
-        if(!e.originalEvent.dataTransfer.getData("track-item-position"))
-            return;
-        container.dragleave();
-    }
-
-    this.build_canvas = function($target)
-    {
-        var i;
-        $target.width(me._item_size * me._col_count);
-        $target.height(me._item_size * me._row_count);
-        for(i = 0; i < (me._col_count * me._row_count); i++)
+        for(var i = 0; i < this._row_count; i++)
         {
-            var trackContainer = new TrackContainer(i);
-            trackContainer.append_html($target);
-            if(me._is_editable)
+            for(var j = 0; j < this._col_count; j++)
             {
-                trackContainer.register_event('drop', drop_track_item);
-                trackContainer.register_event('dragleave', leave_container);
-                trackContainer.register_event('dragover', enter_container);
-                trackContainer.set_droppable();
+                var trackContainer = this.create_track_container(i + '-' + j);
+                trackContainer.append_html($target);
             }
-            me.trackContainers.push(trackContainer);
         }
+    }
+
+    build_station($target)
+    {
+        this.resize_target($target);
+        this.build_grid($target);
         $.post(BASE_PATH + '/get_station', {
-            'id_station': ID_STATION,
-        }, function(data) {
-            if(data.res)
-            {
-                data.data.forEach(function(item, index) {
-                    var item_id = parseInt(item.id);
-                    var trackItem = new TrackItem(item_id, item.id_track_item, item.angle);
-                    if(me.trackContainers[item.position] === void 0) return;
-                    update_container_item(me.trackContainers[item.position], trackItem);
-                    if(item.ecos_id !== null && item.ecos_addr !== null)
-                        trackItem.set_wait_state();
-                    if(me._new_item_id < item_id) me._new_item_id = item_id;
-                });
-            }
+            'id_station': ID_STATION
+        }, (data) => {
+            if(data.res) this.add_tracks(data.data);
         }, 'json');
     }
 
-    this.build_library = function($target)
+    create_track_container(position)
     {
-        if(!me._is_editable) return;
+        return new TrackContainer(position);
+    }
+
+    create_track_item(id, type, angle, pos)
+    {
+        return new TrackItem(id, type, angle, pos);
+    }
+
+    get_grid_count()
+    {
+        return this._col_count * this._row_count;
+    }
+
+    resize_target($target)
+    {
+        $target.width(this._item_size * this._col_count);
+        $target.height(this._item_size * this._row_count);
+    }
+}
+
+class ConfigStation extends Station
+{
+    constructor(rows, cols)
+    {
+        super(rows, cols);
+    }
+
+    build_inventory($target)
+    {
+        this._ecos.send_cmd('queryObjects', 11, ['name1', 'name2', 'name3', 'addr'], (data, err) => {
+            if(err.state) return
+            data.forEach(function(args, index) {
+                var $cont = $('<div/>', {'class': 'card card-body p-1'});
+                for(let [key, arg] of Object.entries(args)) {
+                    $cont.append($('<div/>', {'class':'small'}).text(key + ": " + arg));
+                }
+                $target.append(
+                    $('<div/>', {
+                        'class':'alert alert-dark mb-1 ecos-item',
+                        'id':'ecos-item-' + args.id + '-' + args.addr,
+                        'draggable':true
+                    }).append(
+                        $('<div/>',{'class':'float-left'}).text(args.name1)
+                    ).append(
+                        $('<a/>', {
+                            'class':'dropdown-toggle ml-2 small',
+                            'href':'#',
+                            'data-toggle':'collapse',
+                            'data-target':'#ecos-item-dropdown-' + index,
+                            'aria-expanded':false,
+                            'aria-controls':'ecos-item-dropdown-' + index
+                        }).text('Details')
+                    ).append(
+                        $('<div/>', {
+                            'class': 'collapse',
+                            'id':'ecos-item-dropdown-' + index
+                        }).append($cont)
+                    ).on('dragstart', function(e) {
+                        var ids = $(this).attr('id').split('-');
+                        e.originalEvent.dataTransfer.setData("ecos-item-id", args.id);
+                        e.originalEvent.dataTransfer.setData("ecos-item-addr", args.addr);
+                    })
+                );
+            });
+        });
+    }
+
+    build_library($target)
+    {
         $.get(BASE_PATH + '/get_library', function(data) {
             if(data.res)
             {
                 data.data.forEach(function(item, index) {
-                    var trackItem = new TrackItem(null, item.id, 0);
+                    var trackItem = new LibraryTrackItem(item.id);
                     trackItem.append_html($target);
-                    trackItem.register_event('dragstart', grab_track_item, null);
-                    trackItem.register_event('dblclick', rotate_track_item, null);
-                    trackItem.set_draggable(true);
                 });
             }
         }, 'json');
     }
+
+    create_track_container(position)
+    {
+        return new ConfigTrackContainer(position);
+    }
+
+    create_track_item(id, type, angle, pos)
+    {
+        return new ConfigTrackItem(id, type, angle, pos);
+    }
 }
 
-function TrackContainer(id)
+class TrackContainer
 {
-    var me = this;
-    me._id = id;
-    me._track_item = null;
-    me._$html = null;
-
-    this.append_html = function($target)
+    constructor(position)
     {
-        var id = 'track-container-' + me._id;
+        this._position = position;
+        this._track_item = null;
+        this._$html = null;
+        TrackContainer.grid[this._position] = this;
+    }
+
+    append_html($target)
+    {
+        var id = 'track-container-' + this._position;
         $target.append(
             $('<div/>', {
                 'id': id,
                 'class':'track-container'
             })
         );
-        me._$html = $('#' + id);
+        this._$html = $('#' + id);
+        this._$html.addClass('border-left border-bottom');
     }
 
-    this.clear_track_item = function()
+    clear_track_item()
     {
-        me._track_item = null;
-        me._$html.removeClass('busy');
-        me._$html.empty();
+        this._track_item = null;
+        this._$html.removeClass('busy');
+        this._$html.empty();
     }
 
-    this.dragleave = function()
+    get_track_item()
     {
-        me._$html.removeClass('dragover');
+        return this._track_item;
     }
 
-    this.dragover = function()
+    get_position()
     {
-        me._$html.addClass('dragover');
+        return this._position;;
     }
 
-    this.get_track_item = function()
+    set_track_item(track_item)
     {
-        return me._track_item;
+        this.clear_track_item();
+        this._track_item = track_item;
+        this._track_item.append_html(this._$html);
+        this._$html.addClass('busy');
+        this._$html.removeClass('dragover');
+    }
+}
+TrackContainer.grid = {};
+
+class ConfigTrackContainer extends TrackContainer
+{
+    constructor(id)
+    {
+        super(id);
     }
 
-    this.get_position = function()
+    append_html($target)
     {
-        return me._id;
-    }
-
-    this.register_event = function(event, cb)
-    {
-        me._$html.on(event, function(e) {
-            cb(e, me);
+        super.append_html($target);
+        this._$html.addClass('border-warning');
+        this._$html.on('dragover', (e) => {
+            e.preventDefault();
+            if(!e.originalEvent.dataTransfer.getData("track-item-position"))
+                return;
+            this.dragover();
+        });
+        this._$html.on('dragleave', (e) => {
+            e.preventDefault();
+            if(!e.originalEvent.dataTransfer.getData("track-item-position"))
+                return;
+            this.dragleave();
+        });
+        this._$html.on('drop', (e) => {
+            e.preventDefault();
+            var old_pos = e.originalEvent.dataTransfer.getData("track-item-position");
+            var type = e.originalEvent.dataTransfer.getData("track-item-type");
+            var trackItem = null;
+            var old_container = null;
+            if(old_pos === "" || type === "") return;
+            if(old_pos === "null")
+            {
+                trackItem = new ConfigTrackItem(null, type, 0, this._position);
+            }
+            else
+            {
+                old_container = TrackContainer.grid[old_pos];
+                trackItem = old_container.get_track_item();
+                trackItem.set_position(this._position);
+                old_container.clear_track_item();
+            }
+            trackItem.update_db((id) => {
+                trackItem.set_id(id);
+                this.set_track_item(trackItem);
+            }, true);
         });
     }
 
-    this.set_track_item = function(track_item)
+    clear_track_item()
     {
-        me.clear_track_item();
-        me._track_item = track_item;
-        me._track_item.append_html(me._$html);
-        me._$html.addClass('busy');
-        me._$html.removeClass('dragover');
+        this._track_item = null;
+        this._$html.removeClass('busy');
+        this._$html.empty();
     }
 
-    this.set_droppable = function()
+    dragleave()
     {
-        me._$html.addClass('border-left border-bottom');
+        this._$html.removeClass('dragover');
+    }
+
+    dragover()
+    {
+        this._$html.addClass('dragover');
     }
 }
 
-function TrackItem(id, type, angle)
+class TrackItem
 {
-    var me = this;
-    me._id = id;
-    me._type = type;
-    me._is_draggable = false;
-    me._angle = angle;
-    me._$html = null;
-
-    this.append_html = function($target)
+    constructor(id, type, angle, position)
     {
-        var id = 'track-item-' + me._type;
-        if(me._id !== null)
-            id += '-' + me._id;
+        this._id = id;
+        this._type = type;
+        this._angle = parseInt(angle);
+        this._position = position;
+        this._$html = null;
+    }
+
+    append_html($target)
+    {
+        var id = 'track-item-' + this._type;
+        if(this._id !== null)
+            id += '-' + this._id;
         $target.append(
             $('<div/>', {
                 'id': id,
-                'class': 'track-item track-' + me._type
-            }).css('transform', 'rotate(' + me._angle + 'deg)')
+                'class': 'track-item track-' + this._type
+            })
         );
-        me._$html = $('#' + id);
+        this._$html = $('#' + id);
+        this.update_rotation();
     }
 
-    this.dragleave = function()
+    set_position(position)
     {
-        if(!me.is_droppable()) return;
-        me._$html.removeClass('dragover');
+        this._position = position;
     }
 
-    this.dragover = function()
+    set_wait_state()
     {
-        if(!me.is_droppable()) return;
-        me._$html.addClass('dragover');
+        this._$html.addClass('animated');
     }
 
-    this.get_angle = function()
+    update_rotation()
     {
-        return me._angle;
+        this._$html.css('transform', 'rotate(' + this._angle + 'deg)');
+    }
+}
+TrackItem.counter = 0;
+
+class DraggableTrackItem extends TrackItem
+{
+    constructor(id, type, angle, position)
+    {
+        super(id, type, angle, position);
     }
 
-    this.get_id = function()
+    append_html($target)
     {
-        return me._id;
-    }
-
-    this.get_type = function()
-    {
-        return me._type;
-    }
-
-    this.is_draggable = function()
-    {
-        return me._is_draggable;
-    }
-
-    this.is_droppable = function()
-    {
-        return (me._type > 2);
-    }
-
-    this.register_event = function(event, cb, args)
-    {
-        args = args || null;
-        me._$html.on(event, function(e) {
-            cb(e, me, args);
+        super.append_html($target);
+        this._$html.on('dragstart', (e) => {
+            e.originalEvent.dataTransfer.setData("track-item-position", this._position);
+            e.originalEvent.dataTransfer.setData("track-item-type", this._type);
         });
+        this._$html.attr('draggable', true);
+    }
+}
+
+class ConfigTrackItem extends DraggableTrackItem
+{
+    constructor(id, type, angle, position)
+    {
+        super(id, type, angle, position);
     }
 
-    this.rotate = function(angle)
+    dragleave()
     {
-        me._angle = angle;
-        me._$html.css('transform', 'rotate(' + angle + 'deg)');
+        if(!this.is_droppable()) return;
+        this._$html.removeClass('dragover');
     }
 
-    this.set_angle = function(angle)
+    dragover()
     {
-        me._angle = angle;
+        if(!this.is_droppable()) return;
+        this._$html.addClass('dragover');
     }
 
-    this.set_draggable = function(is_draggable)
+    append_html($target)
     {
-        if(is_draggable)
-        {
-            me._is_draggable = true;
-            me._$html.attr('draggable', true);
-        }
-        else
-        {
-            me._is_draggable = false;
-            me._$html.removeAttr('draggable');
-        }
+        super.append_html($target);
+        this._$html.on('dblclick', (e) => {
+            if(this._$html.hasClass('processing'))
+                return;
+            this._$html.addClass('processing');
+            this._angle += 90;
+            if(this._angle >= 360)
+                this._angle = 0;
+            this.update_db((id) => {
+                this.update_rotation();
+                this._$html.removeClass('processing');
+            }, false);
+        });
+        this._$html.on('dragleave', (e) => {
+            e.preventDefault();
+            if(!e.originalEvent.dataTransfer.getData("ecos-item-id")) return;
+            this.dragleave();
+        });
+        this._$html.on('dragover', (e) => {
+            e.preventDefault();
+            if(!e.originalEvent.dataTransfer.getData("ecos-item-id")) return;
+            this.dragover();
+        });
+        this._$html.on('drop', (e) => {
+            e.preventDefault();
+            var id = e.originalEvent.dataTransfer.getData("ecos-item-id");
+            var addr = e.originalEvent.dataTransfer.getData("ecos-item-addr");
+            if(id === "" || addr === "" || !this.is_droppable()) return;
+            $.post(BASE_PATH + '/update_instance_ecos', {
+                'id': this._id,
+                'id_station': ID_STATION,
+                'ecos_id': id,
+                'ecos_addr': addr
+            }, (data) => {
+                if(data.res)
+                {
+                    this.dragleave();
+                    this.set_wait_state();
+                }
+            }, 'json');
+        });
+
     }
 
-    this.set_wait_state = function()
+    is_droppable()
     {
-        me._$html.addClass('animated');
+        return (this._type > 2);
+    }
+
+    update_db(cb, remove)
+    {
+        $.post(BASE_PATH + '/update_instance', {
+            'id': this._id,
+            'id_track_item': this._type,
+            'id_station': ID_STATION,
+            'angle': this._angle,
+            'position': this._position,
+            'remove': remove
+        }, (data) => {
+            if(data.res)
+                cb(data.id);
+        }, 'json');
+    }
+
+    set_id(id)
+    {
+        if(this._id !== null) return;
+        this._id = id;
+        if(this._$html !== null)
+            this._$html.attr('id', this._$html.attr('id') + '-' + id);
+    }
+}
+
+class LibraryTrackItem extends DraggableTrackItem
+{
+    constructor(type)
+    {
+        super('lib', type, 0, null);
+    }
+
+    append_html($target)
+    {
+        super.append_html($target);
+        this._$html.addClass('border mb-1');
     }
 }

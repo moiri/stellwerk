@@ -1,5 +1,6 @@
 <?php
-    $res = $db->select_table('track_items');
+    $sql = "SELECT * FROM track_items ORDER BY position";
+    $res = $db->query_db($sql);
     $answer = array(
         'res' => $res !== false,
         'err' => $res === false ? "unable to load the track items" : "",

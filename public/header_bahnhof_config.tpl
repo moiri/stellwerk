@@ -18,7 +18,6 @@
     <script src="<?php echo BASE_PATH ?>/js/jquery.min.js" type="text/javascript"></script>
     <script src="<?php echo BASE_PATH ?>/js/bootstrap.min.js" type="text/javascript"></script>
     <script src="<?php echo BASE_PATH ?>/js/socket.io.js" type="text/javascript"></script>
-    <script src="<?php echo BASE_PATH ?>/js/ecos_com.js" type="text/javascript"></script>
     <script src="<?php echo BASE_PATH ?>/js/station.js" type="text/javascript"></script>
     <script src="<?php echo BASE_PATH ?>/js/bahnhof_config.js" type="text/javascript"></script>
 </head>

@@ -5,13 +5,17 @@ if($_POST['remove'] === "true")
         'position' => $_POST['position'] ?? null
     ));
 
-$res = $db->insert('instances', array(
-    'id' => $_POST['id'] ?? null,
+$insert = array(
     'id_track_item' => $_POST['id_track_item'] ?? null,
     'id_station' => $_POST['id_station'] ?? null,
     'angle' => $_POST['angle'] ?? null,
     'position' => $_POST['position'] ?? null,
-), array(
+);
+
+if(isset($_POST['id']) && $_POST['id'] !== "")
+    $insert['id'] = $_POST['id'];
+
+$res = $db->insert('instances', $insert, array(
     'id_track_item' => $_POST['id_track_item'] ?? null,
     'angle' => $_POST['angle'] ?? null,
     'position' => $_POST['position'] ?? null,
@@ -20,6 +24,7 @@ $res = $db->insert('instances', array(
 $answer = array(
     'res' => $res !== false,
     'err' => $res === false ? "unable to update the instance" : "",
+    'id' => ($res !== false) ? $res : null,
 );
 
 echo json_encode($answer);
