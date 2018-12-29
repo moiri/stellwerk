@@ -3,3 +3,22 @@ a.card:hover
     text-decoration: none;
     border-color: #343a40;
 }
+
+.track-item, .track-container
+{
+    width: 64px;
+    height: 64px;
+}
+
+.track-container.dragover
+{
+    background-color: #d4edda;
+}
+.track-container.dragover.busy
+{
+    background-color: #fff3cd;
+}
+.track-item.dragover
+{
+    background-color: #d4edda;
+}

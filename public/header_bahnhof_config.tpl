@@ -12,13 +12,14 @@
     <link rel="stylesheet" type="text/css" href="<?php echo BASE_PATH ?>/css/main.css" />
     <script type="text/javascript">
         const BASE_PATH = "<?php echo BASE_PATH; ?>";
-        const IP = "<?php echo $_SERVER['SERVER_ADDR']; ?>";
         const ID_STATION = "<?php echo $id_station; ?>";
+        const IP = "<?php echo $_SERVER['SERVER_ADDR']; ?>";
     </script>
     <script src="<?php echo BASE_PATH ?>/js/jquery.min.js" type="text/javascript"></script>
     <script src="<?php echo BASE_PATH ?>/js/bootstrap.min.js" type="text/javascript"></script>
     <script src="<?php echo BASE_PATH ?>/js/socket.io.js" type="text/javascript"></script>
+    <script src="<?php echo BASE_PATH ?>/js/ecos_com.js" type="text/javascript"></script>
     <script src="<?php echo BASE_PATH ?>/js/station.js" type="text/javascript"></script>
-    <script src="<?php echo BASE_PATH ?>/js/bahnhof.js" type="text/javascript"></script>
+    <script src="<?php echo BASE_PATH ?>/js/bahnhof_config.js" type="text/javascript"></script>
 </head>
 <body>

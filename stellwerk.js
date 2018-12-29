@@ -1,99 +1,66 @@
 const net = require('net');
 const io = require('socket.io')();
 const config = require('./config');
+const ecos = require('./ecos');
 const ECOS_HOST = config.host;
 const ECOS_PORT = config.port;
 
 const ecos_client = net.createConnection({port: ECOS_PORT, host: ECOS_HOST}, () => {
     console.log('connected to server');
-    ecos_client.write('I am a msg from the client');
 });
 
+var open_requests = [];
 var message_id = 0;
 
 io.on('connection', function(socket) {
-
-    socket.on("disconnect", function(data){
-        console.log("browser disconnected");
+    socket.on('ecos_cmd', function(data, cb) {
+        var msg = ecos.create_cmd(data);
+        var room = encodeURIComponent(msg);
+        if(room in open_requests)
+            id = open_requests[room];
+        else
+        {
+            id = message_id;
+            open_requests[room] = message_id;
+            message_id++;
+        }
+        cb(id);
+        console.log(msg);
+        socket.join(room);
+        if(ecos.is_view_request(data))
+            socket.join(data.id);
+        if(ecos.is_view_release(data))
+            socket.leave(data.id);
+        ecos_client.write(msg);
     });
-    socket.on('ecos_cmd', function(data) {
-        ecos_client.write(data.msg);
-    });
-    ecos_client.on('data', (data) => {
-        const regex_header_reply = /<(REPLY) (.*)\((.*)\)>/gm;
-        const regex_header_event = /<(EVENT) (\d+)>/gm;
-        const regex_footer = /<(END) (\d+) \((.*)?\)>/gm;
-        var res = data.toString().split(/\r?\n/);
-        var header = "";
-        var body = "";
-        var footer = "";
-        var f, h;
-        if(res.length === 3)
-        {
-            header = res[0];
-            body = res[1];
-            footer = res[2];
-        }
-        else if(res.length === 2)
-        {
-            header = res[0];
-            footer = res[1];
-        }
-        else
-            console.log("bad response format: " + data.toString());
+});
 
-        f = regex_footer.exec(footer);
-        if(f !== null && f.length === 4 && f[1] === 'END')
-            footer = {
-                error_code: f[2],
-                error: f[3]
-            };
-        else
-            console.log("bad footer format: " + footer);
-        if(h = regex_header_event.exec(header))
-        {
-            if(h.length === 3)
-                header = {
-                    type: h[1],
-                    cmd: h[2],
-                };
-        }
-        else if(h = regex_header_reply.exec(header))
-        {
-            if(h.length === 4)
-                header = {
-                    type: h[1],
-                    cmd: h[2],
-                    args: h[3].split(/[ ,]+/)
-                };
-        }
-        else
-            console.log("bad header format: " + header);
-        socket.emit('ecos_event', {
-            msg: data.toString(),
-            id: message_id,
-            header: header,
-            body: body,
-            footer: footer
+ecos_client.on('data', (data) => {
+    var res = ecos.parse_msg(data.toString());
+    var room = encodeURIComponent(res.header.cmd);
+    if(res.header.type === "REPLY")
+    {
+        res.message_id = open_requests[room];
+        delete open_requests[room];
+        io.to(room).emit('ecos_reply', res);
+        io.in(room).clients((error, clients) => {
+            clients.forEach(function (socket_id) {
+                io.sockets.sockets[socket_id].leave(room);
+            });
         });
-        message_id++;
-    });
+    }
+    else if(res.header.type === "EVENT")
+    {
+        io.to(room).emit('ecos_event', res);
+    }
 });
 
 io.listen(3000);
-
-ecos_client.on('data', (data) => {
-    console.log('server: ' + data);
-});
-
-ecos_client.on('error', (err) => {
-    throw err;
-});
 
 ecos_client.on('end', () => {
   console.log('disconnected from server');
 });
 
 process.on('SIGTERM', () => {
-  console.info('SIGTERM signal received.');
+  console.log('SIGTERM signal received.');
 });
