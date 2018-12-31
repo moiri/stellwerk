@@ -1,6 +1,9 @@
 <?php
     $fk = $_POST['id_station'] ?? null;
-    $res = $db->select_by_fk('instances', 'id_station', $fk);
+$sql = "SELECT i.*, ti.drive_count FROM instances AS i
+        LEFT JOIN track_items AS ti ON ti.id = i.id_track_item
+        WHERE id_station = :fk";
+    $res = $db->query_db($sql, array(':fk' => $fk));
     $answer = array(
         'res' => $res !== false,
         'err' => $res === false ? "unable to load the instances" : "",
@@ -16,8 +19,9 @@
         $instance['drives'] = array();
         foreach($drives as $drive)
         {
+            $drive['state'] = null;
             if($instance['id'] === $drive['id_instance'])
-                $instance['drives'][] = $drive;
+                $instance['drives'][intval($drive['drive_number'])] = $drive;
         }
         $answer['data'][] = $instance;
     }

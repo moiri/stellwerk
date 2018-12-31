@@ -73,10 +73,10 @@ exports.create_cmd = function(data)
 
 exports.is_view_request = function(data)
 {
-    return (data.cmd === 'request' && 'view' in data.args);
+    return (data.cmd === 'request' && data.args.includes('view'));
 }
 
 exports.is_view_release = function(data)
 {
-    return (data.cmd === 'release' && 'view' in data.args);
+    return (data.cmd === 'release' && data.args.includes('view'));
 }

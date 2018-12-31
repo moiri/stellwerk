@@ -60,7 +60,7 @@ class Station
     {
         data.forEach((item, index) => {
             var trackItem = this.create_track_item(item.id, item.id_track_item,
-                item.angle, item.position, item.drives);
+                item.angle, item.position, item.drives, item.drive_count);
 
             if(TrackContainer.grid[item.position] === void 0)
             {
@@ -98,9 +98,12 @@ class Station
         return new TrackContainer(position);
     }
 
-    create_track_item(id, type, angle, pos, drives)
+    create_track_item(id, type, angle, pos, drives, drive_count)
     {
-        return new DrivenTrackItem(id, type, angle, pos, drives);
+        if(drive_count === "0")
+            return new TrackItem(id, type, angle, pos, drives);
+        else
+            return new DrivenTrackItem(id, type, angle, pos, drives);
     }
 
     get_grid_count()
@@ -330,14 +333,19 @@ class TrackItem
         this._$html = $('#' + id);
         this.update_rotation();
         this._drives.forEach((drive, index) => {
-            if(drive.id !== null && drive.addr !== null)
-                this.set_wait_state();
+            this.init_state(drive);
         });
     }
 
     set_position(position)
     {
         this._position = position;
+    }
+
+    init_state(drive)
+    {
+        if(drive.id !== null && drive.addr !== null)
+            this.set_wait_state();
     }
 
     set_wait_state()
@@ -359,20 +367,97 @@ class DrivenTrackItem extends TrackItem
         super(id, type, angle, position, drives);
     }
 
-    set_wait_state()
+    append_html($target)
     {
-        super.set_wait_state();
-        this._$html.removeClass((index, className) => {
-            return (className.match(/\bstate-\S+/g) || []).join(' ');
-        });
+        super.append_html($target);
         this._drives.forEach((drive, index) => {
-            Station.ecos.send_cmd('get', 11, ['switch[DCC' + drive.addr + 'r]'], (data, err) => {
-                var state = parseInt(data[0].switch);
-                if(drive.is_inverted == 1)
-                    state = 1 - state;
-                this._$html.addClass('state-' + index + '-' + DrivenTrackItem.ecos_states[state]);
-            });
+            if(drive.id !== null && drive.addr !== null)
+                Station.ecos.request_view(drive.id, (data, err) => {
+                    this.update_state(data, index);
+                });
         });
+        this._$html.on('click', (e) => {
+            if(this._$html.hasClass('track-item-modal'))
+                return;
+            var $selection_box = $('<div/>', {'class': 'track-item-selection-box border d-flex'});
+            var state_count = this._drives.length;
+            var states = [];
+            for(var i = 0; i < Math.pow(2, state_count); i++)
+            {
+                var bin_str = i.toString(2);
+                var state_items = [];
+                var zeros = new Array(state_count - bin_str.length).fill(0).join();
+                var state_set = true;
+                bin_str = zeros + bin_str;
+                for(var j = 0; j < state_count; j++)
+                {
+                    var state_item = "state-" + j + '-' + DrivenTrackItem.ecos_states[bin_str[j]];
+                    state_items.push(state_item);
+                    if(!this._$html.hasClass(state_item))
+                        state_set = false;
+                }
+                if(!state_set)
+                    states.push(state_items);
+            }
+            if(states.length === 1)
+            {
+                var elems = states[0][0].split('-');
+                this.set_switch_state(this._drives[elems[1]], elems[2]);
+            }
+            else
+            {
+                states.forEach((state_items, index) => {
+                    $selection_box.append(
+                        $('<div/>', {'class': 'track-item track-' + this._type + ' m-1 inline-block ' + state_items.join(' ')}).on('click', (e) => {
+                            e.stopPropagation();
+                            state_items.forEach((item, index) => {
+                                var elems = item.split('-');
+                                this.set_switch_state(this._drives[elems[1]], elems[2]);
+                            });
+                            $selection_box.remove();
+                            this._$html.removeClass('track-item-modal');
+                        })
+                    );
+                });
+                this._$html.append($selection_box);
+                this._$html.addClass('track-item-modal');
+            }
+        });
+    }
+
+    init_state(drive)
+    {
+        super.init_state(drive);
+        if(drive.state === null)
+            this.get_switch_state(drive);
+    }
+
+    get_switch_state(drive)
+    {
+        Station.ecos.send_cmd('get', 11, ['switch[DCC' + drive.addr + 'r]'], (data, err) => {
+            this.update_state(data, drive.drive_number);
+        });
+    }
+
+    set_switch_state(drive, state)
+    {
+        Station.ecos.send_cmd('set', 11, ['switch[DCC' + drive.addr + state + ']'], (data, err) => {
+            this.set_wait_state();
+        });
+    }
+
+    update_state(data, idx)
+    {
+        var state = parseInt(data[0].switch);
+        var state_inv = 1 - state;
+        if(this._drives[idx].is_inverted == 1)
+        {
+            state = state_inv;
+            state_inv = 1 - state_inv;
+        }
+        this._drives[idx].state = state;
+        this._$html.addClass('state-' + idx + '-' + DrivenTrackItem.ecos_states[state]);
+        this._$html.removeClass('pending state-' + idx + '-' + DrivenTrackItem.ecos_states[state_inv]);
     }
 }
 DrivenTrackItem.ecos_states = ['g', 'r'];

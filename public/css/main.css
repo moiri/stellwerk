@@ -10,6 +10,25 @@ a.card:hover
     height: 64px;
 }
 
+.track-item-selection-box
+{
+    position: absolute;
+    left: 10px;
+    top: 10px;
+    background: white;
+    opacity: 0.9;
+}
+
+.track-item-selection-box > .track-item:hover
+{
+    background-color: #cce5ff;
+}
+
+.track-item-modal
+{
+    z-index: 100;
+}
+
 .track-container.dragover
 {
     background-color: #d4edda;
