@@ -5,13 +5,25 @@
     {
         $id = intval($item['id']);
         $suffix = "";
-        $url = BASE_PATH . '/' . $item['img_path'];
+        $base_url = BASE_PATH . '/img/' . $item['img_name'];
+        $url = $base_url . ".png";
         require __DIR__ . "/library_item.css.tpl";
-        if($item['img_path_animated'] !== null)
+        $drive_count = intval($item['drive_count']);
+        if($drive_count > 0)
         {
-            $suffix = ".animated";
-            $url = BASE_PATH . '/' . $item['img_path_animated'];
+            $ecos_states = array('g', 'r');
+            $suffix = ".pending";
+            $url = $base_url . ".gif";
             require __DIR__ . "/library_item.css.tpl";
+            for($i = 0; $i<pow(2, $drive_count); $i++)
+            {
+                $suffix = "";
+                $states = str_split(sprintf('%0' . $drive_count . 'd', decbin($i)));
+                foreach($states as $idx => $s)
+                    $suffix .= ".state-" . $idx . "-" . $ecos_states[$s];
+                $url = $base_url. "_" . implode('_', $states) . ".png";
+                require __DIR__ . "/library_item.css.tpl";
+            }
         }
     }
 ?>

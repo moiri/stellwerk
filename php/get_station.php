@@ -4,7 +4,22 @@
     $answer = array(
         'res' => $res !== false,
         'err' => $res === false ? "unable to load the instances" : "",
-        'data' => $res !== false ? $res : null,
+        'data' => $res !== false ? array() : null,
     );
+    $sql = "SELECT di.*
+        FROM drive_instances AS di
+        LEFT JOIN instances AS i ON i.id = di.id_instance
+        WHERE i.id_station = :fk";
+    $drives = $db->query_db($sql, array(':fk' => $fk));
+    foreach($res as $instance)
+    {
+        $instance['drives'] = array();
+        foreach($drives as $drive)
+        {
+            if($instance['id'] === $drive['id_instance'])
+                $instance['drives'][] = $drive;
+        }
+        $answer['data'][] = $instance;
+    }
     echo json_encode($answer);
 ?>

@@ -25,8 +25,24 @@ class EcosCom
             cmd: cmd,
             id: id,
             args: args
-        }, (id) => {
-            this._reply_queue[id] = cb;
+        }, (msg_id) => {
+            this._reply_queue[msg_id] = cb;
+        });
+    }
+
+    request_view(id, cb)
+    {
+        this.send_cmd('request', id, ['view'], (data, err) => {
+            if(!err.state)
+                this._event_queue[id] = cb;
+        });
+    }
+
+    release_view(id)
+    {
+        this.send_cmd('release', id, ['view'], (data, err) => {
+            if(!err.state)
+                delete this._event_queue[id];
         });
     }
 }
@@ -38,23 +54,19 @@ class Station
         this._row_count = rows;
         this._col_count = cols;
         this._item_size = 64;
-        this._ecos = new EcosCom();
     }
 
     add_tracks(data)
     {
         data.forEach((item, index) => {
             var trackItem = this.create_track_item(item.id, item.id_track_item,
-                item.angle, item.position);
+                item.angle, item.position, item.drives);
 
             if(TrackContainer.grid[item.position] === void 0)
             {
                 return;
             }
             TrackContainer.grid[item.position].set_track_item(trackItem);
-
-            if(item.ecos_id !== null && item.ecos_addr !== null)
-                trackItem.set_wait_state();
         });
     }
 
@@ -86,9 +98,9 @@ class Station
         return new TrackContainer(position);
     }
 
-    create_track_item(id, type, angle, pos)
+    create_track_item(id, type, angle, pos, drives)
     {
-        return new TrackItem(id, type, angle, pos);
+        return new DrivenTrackItem(id, type, angle, pos, drives);
     }
 
     get_grid_count()
@@ -102,6 +114,7 @@ class Station
         $target.height(this._item_size * this._row_count);
     }
 }
+Station.ecos = new EcosCom();
 
 class ConfigStation extends Station
 {
@@ -112,7 +125,7 @@ class ConfigStation extends Station
 
     build_inventory($target)
     {
-        this._ecos.send_cmd('queryObjects', 11, ['name1', 'name2', 'name3', 'addr'], (data, err) => {
+        Station.ecos.send_cmd('queryObjects', 11, ['name1', 'name2', 'name3', 'addr'], (data, err) => {
             if(err.state) return
             data.forEach(function(args, index) {
                 var $cont = $('<div/>', {'class': 'card card-body p-1'});
@@ -168,9 +181,9 @@ class ConfigStation extends Station
         return new ConfigTrackContainer(position);
     }
 
-    create_track_item(id, type, angle, pos)
+    create_track_item(id, type, angle, pos, drives)
     {
-        return new ConfigTrackItem(id, type, angle, pos);
+        return new ConfigTrackItem(id, type, angle, pos, drives);
     }
 }
 
@@ -257,7 +270,7 @@ class ConfigTrackContainer extends TrackContainer
             if(old_pos === "" || type === "") return;
             if(old_pos === "null")
             {
-                trackItem = new ConfigTrackItem(null, type, 0, this._position);
+                trackItem = new ConfigTrackItem(null, type, 0, this._position, []);
             }
             else
             {
@@ -293,12 +306,13 @@ class ConfigTrackContainer extends TrackContainer
 
 class TrackItem
 {
-    constructor(id, type, angle, position)
+    constructor(id, type, angle, position, drives)
     {
         this._id = id;
         this._type = type;
         this._angle = parseInt(angle);
         this._position = position;
+        this._drives = drives;
         this._$html = null;
     }
 
@@ -315,6 +329,10 @@ class TrackItem
         );
         this._$html = $('#' + id);
         this.update_rotation();
+        this._drives.forEach((drive, index) => {
+            if(drive.id !== null && drive.addr !== null)
+                this.set_wait_state();
+        });
     }
 
     set_position(position)
@@ -324,7 +342,7 @@ class TrackItem
 
     set_wait_state()
     {
-        this._$html.addClass('animated');
+        this._$html.addClass('pending');
     }
 
     update_rotation()
@@ -334,11 +352,36 @@ class TrackItem
 }
 TrackItem.counter = 0;
 
+class DrivenTrackItem extends TrackItem
+{
+    constructor(id, type, angle, position, drives)
+    {
+        super(id, type, angle, position, drives);
+    }
+
+    set_wait_state()
+    {
+        super.set_wait_state();
+        this._$html.removeClass((index, className) => {
+            return (className.match(/\bstate-\S+/g) || []).join(' ');
+        });
+        this._drives.forEach((drive, index) => {
+            Station.ecos.send_cmd('get', 11, ['switch[DCC' + drive.addr + 'r]'], (data, err) => {
+                var state = parseInt(data[0].switch);
+                if(drive.is_inverted == 1)
+                    state = 1 - state;
+                this._$html.addClass('state-' + index + '-' + DrivenTrackItem.ecos_states[state]);
+            });
+        });
+    }
+}
+DrivenTrackItem.ecos_states = ['g', 'r'];
+
 class DraggableTrackItem extends TrackItem
 {
-    constructor(id, type, angle, position)
+    constructor(id, type, angle, position, drives)
     {
-        super(id, type, angle, position);
+        super(id, type, angle, position, drives);
     }
 
     append_html($target)
@@ -354,9 +397,9 @@ class DraggableTrackItem extends TrackItem
 
 class ConfigTrackItem extends DraggableTrackItem
 {
-    constructor(id, type, angle, position)
+    constructor(id, type, angle, position, drives)
     {
-        super(id, type, angle, position);
+        super(id, type, angle, position, drives);
     }
 
     dragleave()
@@ -405,10 +448,13 @@ class ConfigTrackItem extends DraggableTrackItem
                 'id': this._id,
                 'id_station': ID_STATION,
                 'ecos_id': id,
-                'ecos_addr': addr
+                'ecos_addr': addr,
+                'drive': 0,
+                'is_inverted': 0
             }, (data) => {
                 if(data.res)
                 {
+                    this._drives = [{id: id, addr:addr}];
                     this.dragleave();
                     this.set_wait_state();
                 }
@@ -450,7 +496,7 @@ class LibraryTrackItem extends DraggableTrackItem
 {
     constructor(type)
     {
-        super('lib', type, 0, null);
+        super('lib', type, 0, null, []);
     }
 
     append_html($target)
