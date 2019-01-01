@@ -41,3 +41,11 @@ a.card:hover
 {
     background-color: #d4edda;
 }
+.track-item[class*="no-view-"]
+{
+    background-color: #fff3cd;
+}
+.track-item[class*="no-state-"]
+{
+    background-color: #f8d7da;
+}

@@ -16,7 +16,7 @@ $sql = "SELECT i.*, ti.drive_count FROM instances AS i
     $drives = $db->query_db($sql, array(':fk' => $fk));
     foreach($res as $instance)
     {
-        $instance['drives'] = array();
+        $instance['drives'] = array_fill(0, $instance['drive_count'], null);
         foreach($drives as $drive)
         {
             $drive['state'] = null;

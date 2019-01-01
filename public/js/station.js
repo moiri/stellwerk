@@ -30,9 +30,10 @@ class EcosCom
         });
     }
 
-    request_view(id, cb)
+    request_view(id, cb, cb_request)
     {
         this.send_cmd('request', id, ['view'], (data, err) => {
+            if(cb_request !== undefined) cb_request(err);
             if(!err.state)
                 this._event_queue[id] = cb;
         });
@@ -333,6 +334,7 @@ class TrackItem
         this._$html = $('#' + id);
         this.update_rotation();
         this._drives.forEach((drive, index) => {
+            if(drive === null) return;
             this.init_state(drive);
         });
     }
@@ -344,13 +346,14 @@ class TrackItem
 
     init_state(drive)
     {
-        if(drive.id !== null && drive.addr !== null)
-            this.set_wait_state();
+        this.set_wait_state(drive.drive_number);
     }
 
-    set_wait_state()
+    set_wait_state(drive_number)
     {
-        this._$html.addClass('pending');
+        this._$html.addClass('pending-' + drive_number);
+        this._$html.removeClass('state-' + drive_number + '-' + DrivenTrackItem.ecos_states[0]);
+        this._$html.removeClass('state-' + drive_number + '-' + DrivenTrackItem.ecos_states[1]);
     }
 
     update_rotation()
@@ -371,9 +374,12 @@ class DrivenTrackItem extends TrackItem
     {
         super.append_html($target);
         this._drives.forEach((drive, index) => {
-            if(drive.id !== null && drive.addr !== null)
+            this._$html.addClass('no-view-' + index +' no-state-' + index);
+            if(drive !== null)
                 Station.ecos.request_view(drive.id, (data, err) => {
                     this.update_state(data, index);
+                }, (err) => {
+                    this._$html.removeClass('no-view-' + index);
                 });
         });
         this._$html.on('click', (e) => {
@@ -411,6 +417,7 @@ class DrivenTrackItem extends TrackItem
                         $('<div/>', {'class': 'track-item track-' + this._type + ' m-1 inline-block ' + state_items.join(' ')}).on('click', (e) => {
                             e.stopPropagation();
                             state_items.forEach((item, index) => {
+                                if(this._$html.hasClass(item)) return;
                                 var elems = item.split('-');
                                 this.set_switch_state(this._drives[elems[1]], elems[2]);
                             });
@@ -436,13 +443,14 @@ class DrivenTrackItem extends TrackItem
     {
         Station.ecos.send_cmd('get', 11, ['switch[DCC' + drive.addr + 'r]'], (data, err) => {
             this.update_state(data, drive.drive_number);
+            this._$html.removeClass('no-state-' + drive.drive_number);
         });
     }
 
     set_switch_state(drive, state)
     {
         Station.ecos.send_cmd('set', 11, ['switch[DCC' + drive.addr + state + ']'], (data, err) => {
-            this.set_wait_state();
+            this.set_wait_state(drive.drive_number);
         });
     }
 
@@ -457,7 +465,7 @@ class DrivenTrackItem extends TrackItem
         }
         this._drives[idx].state = state;
         this._$html.addClass('state-' + idx + '-' + DrivenTrackItem.ecos_states[state]);
-        this._$html.removeClass('pending state-' + idx + '-' + DrivenTrackItem.ecos_states[state_inv]);
+        this._$html.removeClass('pending-' + idx + ' state-' + idx + '-' + DrivenTrackItem.ecos_states[state_inv]);
     }
 }
 DrivenTrackItem.ecos_states = ['g', 'r'];
@@ -528,20 +536,34 @@ class ConfigTrackItem extends DraggableTrackItem
             e.preventDefault();
             var id = e.originalEvent.dataTransfer.getData("ecos-item-id");
             var addr = e.originalEvent.dataTransfer.getData("ecos-item-addr");
+            var drive_nb = 0;
+            var rm_classes = "";
             if(id === "" || addr === "" || !this.is_droppable()) return;
+            this._drives.forEach((drive, index) => {
+                if(this._$html.hasClass('pending-' + index))
+                {
+                    drive_nb++;
+                    rm_classes += ' pending-' + index;
+                }
+            });
+            if(this._drives.length == drive_nb)
+            {
+                drive_nb = 0;
+                this._$html.removeClass(rm_classes);
+            }
             $.post(BASE_PATH + '/update_instance_ecos', {
                 'id': this._id,
                 'id_station': ID_STATION,
                 'ecos_id': id,
                 'ecos_addr': addr,
-                'drive': 0,
+                'drive': drive_nb,
                 'is_inverted': 0
             }, (data) => {
                 if(data.res)
                 {
-                    this._drives = [{id: id, addr:addr}];
+                    this._drives[drive_nb] = {id: id, addr:addr};
                     this.dragleave();
-                    this.set_wait_state();
+                    this.set_wait_state(drive_nb);
                 }
             }, 'json');
         });
