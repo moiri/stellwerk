@@ -28,7 +28,7 @@ exports.parse_msg = function(data)
         res.err.server.push("bad header format");
 
     // extract body
-    for(line = 1; line < lines.length-1: line++)
+    for(line = 1; line < lines.length-1; line++)
         body_lines.push(lines[line]);
 
     // parse footer
