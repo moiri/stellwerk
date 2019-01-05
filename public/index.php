@@ -8,25 +8,45 @@ $router->setBasePath(BASE_PATH);
 
 $db = new BaseDb(DBSERVER, DBNAME, DBUSER, DBPW);
 
+function print_tpl($tpl)
+{
+    global $db, $router;
+    if($tpl !== null)
+        foreach($tpl as $path)
+            require $path;
+}
+
 $router->map('GET', '/', function($router, $db) {
-    require_once __DIR__ . "/header_home.tpl";
-    require_once __DIR__ . "/home.tpl";
-    require_once __DIR__ . "/footer.tpl";
+    require_once __DIR__ . "/tpl/header.tpl";
+    require_once __DIR__ . "/tpl/home.tpl";
+    require_once __DIR__ . "/tpl/footer.tpl";
 }, 'home');
 $router->map('GET', '/test', function($router, $db) {
-    require_once __DIR__ . "/header_test.tpl";
-    require_once __DIR__ . "/test.tpl";
-    require_once __DIR__ . "/footer.tpl";
+    $custom_js = array(
+        'const BASE_PATH = "' . BASE_PATH .'";',
+        'const IP = "' . $_SERVER['SERVER_ADDR'] . '";',
+    );
+    $js_includes = array(
+        __DIR__ . "/tpl/js_includes/socket.io.js.tpl",
+        __DIR__ . "/tpl/js_includes/test.js.tpl",
+    );
+    require_once __DIR__ . "/tpl/header.tpl";
+    require_once __DIR__ . "/tpl/test.tpl";
+    require_once __DIR__ . "/tpl/footer.tpl";
 }, 'test');
 $router->map('GET', '/bahnhof/[i:id]/config', function($router, $db, $id_station) {
-    require_once __DIR__ . "/header_bahnhof_config.tpl";
-    require_once __DIR__ . "/bahnhof_config.tpl";
-    require_once __DIR__ . "/footer.tpl";
+    require_once __DIR__ . "/tpl/header_bahnhof_preset.tpl";
+    $js_includes[] = __DIR__ . "/tpl/js_includes/bahnhof_config.js.tpl";
+    require_once __DIR__ . "/tpl/header.tpl";
+    require_once __DIR__ . "/tpl/bahnhof_config.tpl";
+    require_once __DIR__ . "/tpl/footer.tpl";
 }, 'bahnhof_config');
 $router->map('GET', '/bahnhof/[i:id]', function($router, $db, $id_station) {
-    require_once __DIR__ . "/header_bahnhof.tpl";
-    require_once __DIR__ . "/bahnhof.tpl";
-    require_once __DIR__ . "/footer.tpl";
+    require_once __DIR__ . "/tpl/header_bahnhof_preset.tpl";
+    $js_includes[] = __DIR__ . "/tpl/js_includes/bahnhof.js.tpl";
+    require_once __DIR__ . "/tpl/header.tpl";
+    require_once __DIR__ . "/tpl/bahnhof.tpl";
+    require_once __DIR__ . "/tpl/footer.tpl";
 }, 'bahnhof');
 $router->map('POST', '/update_instance', function($router, $db) {
     require_once "../php/update_instance.php";

@@ -1,11 +1,11 @@
 -- phpMyAdmin SQL Dump
--- version 4.6.6deb5
+-- version 4.6.6deb4
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost:3306
--- Generation Time: Jan 01, 2019 at 10:03 PM
--- Server version: 5.7.24-0ubuntu0.18.04.1
--- PHP Version: 7.2.10-0ubuntu0.18.04.1
+-- Generation Time: Jan 05, 2019 at 08:53 PM
+-- Server version: 10.1.37-MariaDB-0+deb9u1
+-- PHP Version: 7.0.33-0+deb9u1
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 SET time_zone = "+00:00";
@@ -34,6 +34,14 @@ CREATE TABLE `drive_instances` (
   `is_inverted` int(1) NOT NULL DEFAULT '0'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+--
+-- Dumping data for table `drive_instances`
+--
+
+INSERT INTO `drive_instances` (`id`, `addr`, `id_instance`, `drive_number`, `is_inverted`) VALUES
+(20022, 11, 14, 0, 0),
+(20022, 12, 14, 1, 0);
+
 -- --------------------------------------------------------
 
 --
@@ -55,52 +63,156 @@ CREATE TABLE `instances` (
 --
 
 INSERT INTO `instances` (`id`, `id_station`, `id_track_item`, `angle`, `position`, `ecos_id`, `ecos_addr`) VALUES
-(5, 1, 1, 180, '2-0', NULL, NULL),
-(6, 1, 1, 0, '3-0', NULL, NULL),
-(7, 1, 3, 180, '2-1', NULL, NULL),
-(8, 1, 1, 0, '3-1', NULL, NULL),
-(9, 1, 4, 180, '2-2', NULL, NULL),
-(10, 1, 4, 180, '0-2', NULL, NULL),
-(11, 1, 2, 90, '0-1', NULL, NULL),
-(12, 1, 1, 90, '1-1', NULL, NULL),
-(13, 1, 2, 0, '1-2', NULL, NULL),
-(14, 1, 5, 0, '3-2', NULL, NULL),
-(15, 1, 2, 0, '4-2', NULL, NULL),
-(16, 1, 1, 0, '0-3', NULL, NULL),
-(17, 1, 1, 0, '1-3', NULL, NULL),
-(18, 1, 1, 0, '2-3', NULL, NULL),
+(7, 1, 3, 180, '2-3', NULL, NULL),
+(9, 1, 4, 180, '2-4', NULL, NULL),
+(11, 1, 2, 90, '1-3', NULL, NULL),
+(14, 1, 5, 0, '3-4', NULL, NULL),
+(15, 1, 2, 0, '4-4', NULL, NULL),
 (19, 1, 1, 0, '3-3', NULL, NULL),
-(20, 1, 1, 0, '4-3', NULL, NULL),
-(26, 1, 1, 0, '0-4', NULL, NULL),
-(27, 1, 1, 0, '1-4', NULL, NULL),
-(29, 1, 1, 0, '3-4', NULL, NULL),
-(30, 1, 1, 0, '4-4', NULL, NULL),
-(31, 1, 1, 0, '0-5', NULL, NULL),
-(32, 1, 1, 0, '1-5', NULL, NULL),
-(33, 1, 1, 0, '2-4', NULL, NULL),
+(20, 1, 1, 0, '4-5', NULL, NULL),
+(26, 1, 1, 0, '1-6', NULL, NULL),
+(32, 1, 1, 0, '1-7', NULL, NULL),
 (34, 1, 1, 0, '2-5', NULL, NULL),
 (35, 1, 1, 0, '3-5', NULL, NULL),
-(36, 1, 1, 0, '4-5', NULL, NULL),
 (37, 1, 1, 0, '0-6', NULL, NULL),
-(38, 1, 1, 0, '1-6', NULL, NULL),
+(38, 1, 1, 0, '1-8', NULL, NULL),
 (39, 1, 1, 0, '2-6', NULL, NULL),
 (40, 1, 1, 0, '3-6', NULL, NULL),
 (41, 1, 1, 0, '4-6', NULL, NULL),
-(42, 1, 3, 180, '4-7', NULL, NULL),
-(43, 1, 4, 270, '3-7', NULL, NULL),
-(44, 1, 3, 0, '2-7', 1001, 16),
-(45, 1, 4, 0, '2-8', 1000, 16),
-(46, 1, 2, 180, '1-8', NULL, NULL),
-(47, 1, 1, 0, '1-7', NULL, NULL),
-(48, 1, 1, 0, '2-9', NULL, NULL),
+(42, 1, 3, 180, '4-11', NULL, NULL),
+(44, 1, 3, 0, '2-12', 1001, 16),
+(45, 1, 4, 0, '2-14', 1000, 16),
+(46, 1, 2, 180, '1-14', NULL, NULL),
+(47, 1, 1, 0, '1-9', NULL, NULL),
+(48, 1, 1, 0, '2-15', NULL, NULL),
 (49, 1, 1, 0, '4-8', NULL, NULL),
-(50, 1, 1, 0, '4-9', NULL, NULL),
 (51, 3, 1, 0, '0-0', NULL, NULL),
 (52, 3, 1, 0, '0-0', NULL, NULL),
 (53, 3, 1, 0, '0-0', NULL, NULL),
 (54, 1, 1, 180, '0-7', NULL, NULL),
 (55, 1, 1, 0, '0-8', NULL, NULL),
-(56, 1, 6, 0, '0-9', NULL, NULL);
+(56, 1, 6, 0, '0-9', NULL, NULL),
+(59, 1, 1, 0, '1-5', NULL, NULL),
+(60, 1, 1, 0, '0-5', NULL, NULL),
+(62, 1, 3, 180, '1-4', NULL, NULL),
+(63, 1, 2, 90, '0-4', NULL, NULL),
+(64, 1, 1, 0, '2-13', NULL, NULL),
+(65, 1, 2, 270, '3-12', NULL, NULL),
+(66, 1, 3, 0, '3-11', NULL, NULL),
+(67, 1, 1, 0, '4-7', NULL, NULL),
+(68, 1, 1, 0, '1-10', NULL, NULL),
+(69, 1, 1, 0, '1-11', NULL, NULL),
+(70, 1, 1, 0, '1-12', NULL, NULL),
+(71, 1, 1, 0, '1-13', NULL, NULL),
+(72, 1, 1, 0, '2-7', NULL, NULL),
+(73, 1, 1, 0, '2-8', NULL, NULL),
+(74, 1, 1, 0, '2-9', NULL, NULL),
+(75, 1, 1, 0, '3-7', NULL, NULL),
+(76, 1, 1, 0, '3-8', NULL, NULL),
+(79, 1, 1, 0, '4-12', NULL, NULL),
+(80, 1, 6, 0, '4-13', NULL, NULL),
+(82, 1, 1, 0, '2-2', NULL, NULL),
+(83, 1, 6, 180, '3-2', NULL, NULL),
+(84, 1, 1, 0, '2-1', NULL, NULL),
+(85, 1, 2, 90, '2-0', NULL, NULL),
+(86, 1, 1, 90, '3-0', NULL, NULL),
+(87, 1, 1, 90, '4-0', NULL, NULL),
+(89, 1, 4, 270, '5-0', NULL, NULL),
+(90, 1, 1, 0, '2-10', NULL, NULL),
+(91, 1, 1, 0, '2-11', NULL, NULL),
+(92, 1, 1, 0, '3-9', NULL, NULL),
+(93, 1, 1, 0, '3-10', NULL, NULL),
+(94, 1, 1, 0, '4-9', NULL, NULL),
+(95, 1, 1, 0, '4-10', NULL, NULL),
+(96, 2, 1, 0, '4-0', NULL, NULL),
+(97, 2, 3, 180, '4-1', NULL, NULL),
+(98, 2, 3, 180, '4-2', NULL, NULL),
+(99, 2, 1, 0, '4-3', NULL, NULL),
+(100, 2, 4, 180, '4-4', NULL, NULL),
+(101, 2, 2, 90, '3-1', NULL, NULL),
+(102, 2, 2, 90, '3-2', NULL, NULL),
+(103, 2, 1, 0, '3-3', NULL, NULL),
+(104, 2, 1, 0, '3-4', NULL, NULL),
+(105, 2, 1, 0, '3-5', NULL, NULL),
+(106, 2, 1, 0, '3-6', NULL, NULL),
+(108, 2, 5, 0, '3-7', NULL, NULL),
+(109, 2, 4, 0, '4-7', NULL, NULL),
+(110, 2, 1, 0, '4-5', NULL, NULL),
+(111, 2, 1, 0, '4-6', NULL, NULL),
+(112, 2, 2, 0, '5-4', NULL, NULL),
+(113, 2, 4, 180, '5-5', NULL, NULL),
+(115, 2, 3, 0, '3-11', NULL, NULL),
+(116, 2, 4, 0, '7-6', NULL, NULL),
+(117, 2, 4, 0, '8-7', NULL, NULL),
+(118, 2, 2, 180, '7-7', NULL, NULL),
+(119, 2, 1, 0, '8-8', NULL, NULL),
+(120, 2, 4, 180, '6-6', NULL, NULL),
+(121, 2, 2, 0, '6-5', NULL, NULL),
+(122, 2, 1, 0, '7-5', NULL, NULL),
+(123, 2, 1, 0, '8-6', NULL, NULL),
+(124, 2, 1, 0, '8-5', NULL, NULL),
+(125, 2, 6, 180, '7-3', NULL, NULL),
+(126, 2, 6, 180, '8-3', NULL, NULL),
+(127, 2, 6, 0, '8-12', NULL, NULL),
+(128, 2, 1, 0, '6-7', NULL, NULL),
+(130, 2, 6, 0, '6-12', NULL, NULL),
+(131, 2, 1, 0, '5-6', NULL, NULL),
+(132, 2, 1, 0, '5-7', NULL, NULL),
+(133, 2, 1, 0, '6-8', NULL, NULL),
+(134, 2, 1, 0, '5-8', NULL, NULL),
+(135, 2, 6, 0, '5-12', NULL, NULL),
+(136, 2, 1, 0, '4-8', NULL, NULL),
+(137, 2, 1, 0, '4-9', NULL, NULL),
+(138, 2, 1, 0, '4-10', NULL, NULL),
+(139, 2, 2, 270, '4-11', NULL, NULL),
+(140, 2, 1, 0, '3-8', NULL, NULL),
+(141, 2, 1, 0, '3-9', NULL, NULL),
+(142, 2, 1, 0, '3-10', NULL, NULL),
+(144, 2, 6, 0, '3-12', NULL, NULL),
+(145, 2, 2, 90, '2-2', NULL, NULL),
+(146, 2, 2, 270, '2-3', NULL, NULL),
+(147, 2, 2, 90, '1-3', NULL, NULL),
+(148, 2, 2, 270, '1-4', NULL, NULL),
+(149, 2, 2, 90, '0-4', NULL, NULL),
+(150, 2, 4, 180, '0-5', NULL, NULL),
+(152, 2, 4, 180, '0-6', NULL, NULL),
+(153, 2, 2, 0, '1-5', NULL, NULL),
+(154, 2, 2, 0, '2-6', NULL, NULL),
+(155, 2, 4, 180, '2-7', NULL, NULL),
+(156, 2, 2, 180, '1-6', NULL, NULL),
+(157, 2, 1, 0, '1-7', NULL, NULL),
+(158, 2, 1, 0, '1-8', NULL, NULL),
+(159, 2, 1, 0, '1-9', NULL, NULL),
+(160, 2, 1, 0, '1-10', NULL, NULL),
+(161, 2, 1, 0, '1-11', NULL, NULL),
+(162, 2, 1, 0, '1-12', NULL, NULL),
+(163, 2, 6, 0, '1-14', NULL, NULL),
+(164, 2, 1, 0, '2-8', NULL, NULL),
+(165, 2, 1, 0, '2-9', NULL, NULL),
+(166, 2, 1, 0, '2-10', NULL, NULL),
+(167, 2, 1, 0, '2-11', NULL, NULL),
+(169, 2, 6, 0, '2-12', NULL, NULL),
+(170, 2, 1, 0, '0-7', NULL, NULL),
+(171, 2, 1, 0, '0-8', NULL, NULL),
+(172, 2, 1, 0, '0-9', NULL, NULL),
+(173, 2, 1, 0, '0-10', NULL, NULL),
+(174, 2, 1, 0, '0-11', NULL, NULL),
+(175, 2, 1, 0, '0-12', NULL, NULL),
+(176, 2, 1, 0, '0-13', NULL, NULL),
+(177, 2, 1, 0, '0-14', NULL, NULL),
+(178, 2, 2, 180, '0-15', NULL, NULL),
+(179, 2, 1, 0, '1-13', NULL, NULL),
+(180, 2, 1, 0, '5-9', NULL, NULL),
+(181, 2, 1, 0, '5-10', NULL, NULL),
+(182, 2, 1, 0, '5-11', NULL, NULL),
+(183, 2, 1, 0, '6-9', NULL, NULL),
+(184, 2, 1, 0, '6-10', NULL, NULL),
+(185, 2, 1, 0, '6-11', NULL, NULL),
+(186, 2, 1, 0, '8-9', NULL, NULL),
+(187, 2, 1, 0, '8-10', NULL, NULL),
+(188, 2, 1, 0, '8-11', NULL, NULL),
+(189, 2, 1, 0, '7-4', NULL, NULL),
+(190, 2, 1, 0, '8-4', NULL, NULL);
 
 -- --------------------------------------------------------
 
@@ -186,7 +298,7 @@ ALTER TABLE `track_items`
 -- AUTO_INCREMENT for table `instances`
 --
 ALTER TABLE `instances`
-  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=57;
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=191;
 --
 -- AUTO_INCREMENT for table `station`
 --

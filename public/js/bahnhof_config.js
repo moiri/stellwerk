@@ -1,9 +1,8 @@
 $(document).ready(function() {
-    const col_count = 10;
-    const row_count = 5;
-    var socket = io('http://' + IP + ':3000');
+    const col_count = NB_COLS;
+    const row_count = NB_ROWS;
     var station = new ConfigStation(row_count, col_count);
-    var ecos = new EcosCom(socket);
+    var ecos = new EcosCom();
     var $ecos = $('#ecos-items');
 
     // build station

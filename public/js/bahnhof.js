@@ -1,6 +1,6 @@
 $(document).ready(function() {
-    const col_count = 10;
-    const row_count = 5;
+    const col_count = NB_COLS;
+    const row_count = NB_ROWS;
     var station = new Station(row_count, col_count);
     station.build_station($('.canvas'));
 });

@@ -1,7 +1,5 @@
 <div class="container-fluid">
     <?php
-        $active = array("", "");
-        $active[$id_station] = "active";
         $target = "bahnhof_config";
         require __DIR__ . "/nav.tpl";
     ?>

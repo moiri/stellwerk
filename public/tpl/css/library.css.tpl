@@ -1,6 +1,4 @@
-<style type="text/css">
-<?php
-    $items = $db->select_table('track_items');
+<?php $items = $db->select_table('track_items');
     foreach($items as $item)
     {
         $id = intval($item['id']);
@@ -58,4 +56,3 @@
         require __DIR__ . "/library_item.css.tpl";
     }
 ?>
-</style>
