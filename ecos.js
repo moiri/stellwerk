@@ -27,13 +27,12 @@ exports.parse_msg = function(data)
     else
         res.err.server.push("bad header format");
 
-    // parse footer and extract body
-    while(null === (f = regex_footer.exec(lines[line])))
-    {
+    // extract body
+    for(line = 1; line < lines.length-1: line++)
         body_lines.push(lines[line]);
-        line++;
-    }
 
+    // parse footer
+    f = regex_footer.exec(lines[lines.length-1]);
     if(f !== null && f.length === 4 && f[1] === 'END')
         footer = {
             error_code: f[2],

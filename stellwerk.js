@@ -38,7 +38,7 @@ io.on('connection', function(socket) {
 ecos_client.on('data', (data) => {
     var res = ecos.parse_msg(data.toString());
     var room = encodeURIComponent(res.header.cmd);
-    console.log(res);
+    console.log(data.toString());
     if(res.header.type === "REPLY")
     {
         res.message_id = open_requests[room];
