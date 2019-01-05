@@ -456,7 +456,11 @@ class DrivenTrackItem extends TrackItem
 
     update_state(data, idx)
     {
-        var state = parseInt(data[0].switch);
+        var state, state_inv;
+        if(data[0].switch !== undefined)
+            state = parseInt(data[0].switch)
+        else if(data[0].state !== undefined)
+            state = parseInt(data[0].state)
         var state_inv = 1 - state;
         if(this._drives[idx].is_inverted == 1)
         {
