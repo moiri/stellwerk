@@ -1,11 +1,11 @@
 -- phpMyAdmin SQL Dump
--- version 4.6.6deb4
+-- version 4.6.6deb5
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost:3306
--- Generation Time: Jan 05, 2019 at 08:53 PM
--- Server version: 10.1.37-MariaDB-0+deb9u1
--- PHP Version: 7.0.33-0+deb9u1
+-- Generation Time: Jan 07, 2019 at 12:51 AM
+-- Server version: 5.7.24-0ubuntu0.18.04.1
+-- PHP Version: 7.2.10-0ubuntu0.18.04.1
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 SET time_zone = "+00:00";
@@ -69,7 +69,7 @@ INSERT INTO `instances` (`id`, `id_station`, `id_track_item`, `angle`, `position
 (14, 1, 5, 0, '3-4', NULL, NULL),
 (15, 1, 2, 0, '4-4', NULL, NULL),
 (19, 1, 1, 0, '3-3', NULL, NULL),
-(20, 1, 1, 0, '4-5', NULL, NULL),
+(20, 1, 1, 0, '4-6', NULL, NULL),
 (26, 1, 1, 0, '1-6', NULL, NULL),
 (32, 1, 1, 0, '1-7', NULL, NULL),
 (34, 1, 1, 0, '2-5', NULL, NULL),
@@ -78,7 +78,6 @@ INSERT INTO `instances` (`id`, `id_station`, `id_track_item`, `angle`, `position
 (38, 1, 1, 0, '1-8', NULL, NULL),
 (39, 1, 1, 0, '2-6', NULL, NULL),
 (40, 1, 1, 0, '3-6', NULL, NULL),
-(41, 1, 1, 0, '4-6', NULL, NULL),
 (42, 1, 3, 180, '4-11', NULL, NULL),
 (44, 1, 3, 0, '2-12', 1001, 16),
 (45, 1, 4, 0, '2-14', 1000, 16),
@@ -93,7 +92,6 @@ INSERT INTO `instances` (`id`, `id_station`, `id_track_item`, `angle`, `position
 (55, 1, 1, 0, '0-8', NULL, NULL),
 (56, 1, 6, 0, '0-9', NULL, NULL),
 (59, 1, 1, 0, '1-5', NULL, NULL),
-(60, 1, 1, 0, '0-5', NULL, NULL),
 (62, 1, 3, 180, '1-4', NULL, NULL),
 (63, 1, 2, 90, '0-4', NULL, NULL),
 (64, 1, 1, 0, '2-13', NULL, NULL),
@@ -130,7 +128,6 @@ INSERT INTO `instances` (`id`, `id_station`, `id_track_item`, `angle`, `position
 (99, 2, 1, 0, '4-3', NULL, NULL),
 (100, 2, 4, 180, '4-4', NULL, NULL),
 (101, 2, 2, 90, '3-1', NULL, NULL),
-(102, 2, 2, 90, '3-2', NULL, NULL),
 (103, 2, 1, 0, '3-3', NULL, NULL),
 (104, 2, 1, 0, '3-4', NULL, NULL),
 (105, 2, 1, 0, '3-5', NULL, NULL),
@@ -179,7 +176,6 @@ INSERT INTO `instances` (`id`, `id_station`, `id_track_item`, `angle`, `position
 (153, 2, 2, 0, '1-5', NULL, NULL),
 (154, 2, 2, 0, '2-6', NULL, NULL),
 (155, 2, 4, 180, '2-7', NULL, NULL),
-(156, 2, 2, 180, '1-6', NULL, NULL),
 (157, 2, 1, 0, '1-7', NULL, NULL),
 (158, 2, 1, 0, '1-8', NULL, NULL),
 (159, 2, 1, 0, '1-9', NULL, NULL),
@@ -212,7 +208,11 @@ INSERT INTO `instances` (`id`, `id_station`, `id_track_item`, `angle`, `position
 (187, 2, 1, 0, '8-10', NULL, NULL),
 (188, 2, 1, 0, '8-11', NULL, NULL),
 (189, 2, 1, 0, '7-4', NULL, NULL),
-(190, 2, 1, 0, '8-4', NULL, NULL);
+(190, 2, 1, 0, '8-4', NULL, NULL),
+(191, 2, 7, 90, '3-2', NULL, NULL),
+(192, 2, 7, 180, '1-6', NULL, NULL),
+(193, 1, 1, 0, '0-5', NULL, NULL),
+(194, 1, 1, 0, '4-5', NULL, NULL);
 
 -- --------------------------------------------------------
 
@@ -232,7 +232,8 @@ CREATE TABLE `station` (
 --
 
 INSERT INTO `station` (`id`, `name`, `cols`, `rows`) VALUES
-(1, 'Hauptbahnhof', 11, 5);
+(1, 'Hauptbahnhof', 16, 6),
+(2, 'Kopfbahnhof', 16, 9);
 
 -- --------------------------------------------------------
 
@@ -245,20 +246,22 @@ CREATE TABLE `track_items` (
   `name` varchar(100) NOT NULL,
   `img_name` varchar(100) NOT NULL,
   `drive_count` int(1) NOT NULL,
-  `position` int(4) NOT NULL
+  `position` int(4) NOT NULL,
+  `connection` varchar(100) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
 -- Dumping data for table `track_items`
 --
 
-INSERT INTO `track_items` (`id`, `name`, `img_name`, `drive_count`, `position`) VALUES
-(1, 'Gerade', 'gerade', 0, 10),
-(2, 'Diagonale', 'diagonal', 0, 20),
-(3, 'Weiche links', 'weiche_links', 1, 40),
-(4, 'Weiche rechts', 'weiche_rechts', 1, 50),
-(5, 'Engländer', 'englaender', 2, 60),
-(6, 'Schluss', 'schluss', 0, 30);
+INSERT INTO `track_items` (`id`, `name`, `img_name`, `drive_count`, `position`, `connection`) VALUES
+(1, 'Gerade', 'gerade', 0, 10, '[[0,2]]'),
+(2, 'Diagonale', 'diagonal', 0, 20, '[[2,3]]'),
+(3, 'Weiche links', 'weiche_links', 1, 40, '[[0,2],[1,2]]'),
+(4, 'Weiche rechts', 'weiche_rechts', 1, 50, '[[0,2],[2,3]]'),
+(5, 'Engländer', 'englaender', 2, 60, '[[0,2],[2,3],[0,1],[1,3]]'),
+(6, 'Schluss', 'schluss', 0, 30, '[]'),
+(7, 'Doppel Diaginale', 'diagonal_2', 0, 25, '[[0,1],[2,3]]');
 
 --
 -- Indexes for dumped tables
@@ -298,17 +301,17 @@ ALTER TABLE `track_items`
 -- AUTO_INCREMENT for table `instances`
 --
 ALTER TABLE `instances`
-  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=191;
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=195;
 --
 -- AUTO_INCREMENT for table `station`
 --
 ALTER TABLE `station`
-  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 --
 -- AUTO_INCREMENT for table `track_items`
 --
 ALTER TABLE `track_items`
-  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
 --
 -- Constraints for dumped tables
 --

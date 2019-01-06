@@ -375,7 +375,7 @@ class TrackItem
             $('<div/>', {
                 'id': id,
                 'class': 'track-item track-' + this._type
-            }).text(this._id)
+            })
         );
         this._$html = $('#' + id);
         this.update_rotation();
