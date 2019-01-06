@@ -12,7 +12,7 @@ $sql = "SELECT i.*, ti.drive_count FROM instances AS i
     $sql = "SELECT di.*
         FROM drive_instances AS di
         LEFT JOIN instances AS i ON i.id = di.id_instance
-        WHERE i.id_station = :fk";
+        WHERE i.id_station = :fk ORDER BY di.id, di.drive_number";
     $drives = $db->query_db($sql, array(':fk' => $fk));
     foreach($res as $instance)
     {

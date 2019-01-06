@@ -41,7 +41,7 @@ a.card:hover
 {
     background-color: #d4edda;
 }
-.track-item[class*="no-view-"]
+.track-item.no-view
 {
     background-color: #fff3cd;
 }

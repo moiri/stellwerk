@@ -372,15 +372,22 @@ class DrivenTrackItem extends TrackItem
 
     append_html($target)
     {
+        var first = true;
         super.append_html($target);
+        // multiple drives have the same id but only different addresses. Hence,
+        // it's ok to just register events with the first drive.
         this._drives.forEach((drive, index) => {
-            this._$html.addClass('no-view-' + index +' no-state-' + index);
-            if(drive !== null)
+            this._$html.addClass('no-state-' + index);
+            if(drive !== null && first)
+            {
+                this._$html.addClass('no-view');
                 Station.ecos.request_view(drive.id, (data, err) => {
-                    this.update_state(data, index);
+                    this.update_state_event(data);
                 }, (err) => {
-                    this._$html.removeClass('no-view-' + index);
+                    this._$html.removeClass('no-view');
                 });
+                first = false;
+            }
         });
         this._$html.on('click', (e) => {
             if(this._$html.hasClass('track-item-modal'))
@@ -442,7 +449,7 @@ class DrivenTrackItem extends TrackItem
     get_switch_state(drive)
     {
         Station.ecos.send_cmd('get', 11, ['switch[DCC' + drive.addr + 'r]'], (data, err) => {
-            this.update_state(data, drive.drive_number);
+            this.update_state_get(data, drive.drive_number);
             this._$html.removeClass('no-state-' + drive.drive_number);
         });
     }
@@ -454,14 +461,10 @@ class DrivenTrackItem extends TrackItem
         });
     }
 
-    update_state(data, idx)
+    update_state(state, idx)
     {
-        var state, state_inv;
-        if(data[0].switch !== undefined)
-            state = parseInt(data[0].switch)
-        else if(data[0].state !== undefined)
-            state = parseInt(data[0].state)
-        var state_inv = 1 - state;
+        var state_inv;
+        state_inv = 1 - state;
         if(this._drives[idx].is_inverted == 1)
         {
             state = state_inv;
@@ -470,6 +473,34 @@ class DrivenTrackItem extends TrackItem
         this._drives[idx].state = state;
         this._$html.addClass('state-' + idx + '-' + DrivenTrackItem.ecos_states[state]);
         this._$html.removeClass('pending-' + idx + ' state-' + idx + '-' + DrivenTrackItem.ecos_states[state_inv]);
+    }
+
+    update_state_get(data, idx)
+    {
+        var state = parseInt(data[0].switch)
+        this.update_state(state, idx)
+
+    }
+
+    update_state_event(data)
+    {
+        // the geniuses at ESU decided to use different addresses but the same
+        // id for switching articles with multiple drives. As views are
+        // registered on ids I have to decompose the state number (as it can
+        // reach a number of 2^(drive_count-1) and hope that the number they
+        // send in base 2 corresponds to the states of each drive).
+        var idx, pos;
+        var state = parseInt(data[0].state)
+        var bin_str = state.toString(2);
+        var zeros = new Array(this._drives.length - bin_str.length).fill(0).join();
+        bin_str = zeros + bin_str;
+        for(idx = 0; idx < bin_str.length; idx++)
+        {
+            pos = idx;
+            // pos = bin_str.length - idx - 1;
+            state = parseInt(bin_str.charAt(pos));
+            this.update_state(state, idx);
+        }
     }
 }
 DrivenTrackItem.ecos_states = ['g', 'r'];
