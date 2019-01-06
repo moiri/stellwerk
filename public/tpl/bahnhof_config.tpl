@@ -6,7 +6,7 @@
     <div class="row mt-3">
         <div id="library" class="col-auto">
         </div>
-        <div class="col">
+        <div class="col station-container">
             <div class="canvas border-top border-right border-warning d-flex flex-wrap"></div>
         </div>
         <div id="ecos-items" class="col-auto">

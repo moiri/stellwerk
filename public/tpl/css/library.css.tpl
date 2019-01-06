@@ -25,7 +25,7 @@
                 $suffix = "";
                 $states = array_reverse(str_split(sprintf('%0' . $drive_count . 'd', decbin($i))));
                 foreach($states as $idx => $s)
-                    $suffix .= ".state-" . $idx . "-" . $ecos_states[$s];
+                    $suffix .= ".state-" . $idx . "-" . $s;
                 $url = $base_url. "_" . implode('_', $states) . ".png";
                 require __DIR__ . "/library_item.css.tpl";
                 if($i % 2 === 0 && $drive_count > 1)
@@ -42,7 +42,7 @@
                             if($s === 'x')
                                 $suffix .= ".pending-" . $j;
                             else
-                                $suffix .= ".state-" . $idx . "-" . $ecos_states[$s];
+                                $suffix .= ".state-" . $idx . "-" . $s;
                         }
                         $url = $base_url. "_" . implode('_', $states) . ".gif";
                         require __DIR__ . "/library_item.css.tpl";

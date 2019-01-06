@@ -52,23 +52,48 @@ class Station
 {
     constructor(rows, cols)
     {
-        this._row_count = rows;
-        this._col_count = cols;
+        this._row_count = parseInt(rows);
+        this._col_count = parseInt(cols);
         this._item_size = 64;
     }
 
     add_tracks(data)
     {
         data.forEach((item, index) => {
-            var trackItem = this.create_track_item(item.id, item.id_track_item,
-                item.angle, item.position, item.drives, item.drive_count);
+            var trackItem = this.create_track_item(item);
 
-            if(TrackContainer.grid[item.position] === void 0)
-            {
-                return;
-            }
+            if(TrackContainer.grid[item.position] === void 0) return;
             TrackContainer.grid[item.position].set_track_item(trackItem);
         });
+        for(let [key, container] of Object.entries(TrackContainer.grid)) {
+            var item;
+            if(container.has_track_item())
+            {
+                item = container.get_track_item();
+                item.get_connection().forEach((con, index) => {
+                    var pos = key.split('-');
+                    var npos1 = this.get_next_position(con[0], pos);
+                    var npos2 = this.get_next_position(con[1], pos);
+                    var cont1 = TrackContainer.grid[npos1];
+                    var cont2 = TrackContainer.grid[npos2];
+                    if(cont1 === undefined || cont2 === undefined)
+                        return;
+                    item.add_neighbours(cont1.get_track_item(), cont2.get_track_item());
+                });
+            }
+        }
+    }
+
+    get_next_position(direction, pos)
+    {
+        if(direction == 0)
+            return pos[0] + '-' + (parseInt(pos[1]) - 1);
+        else if(direction == 1)
+            return (parseInt(pos[0]) + 1) + '-' + pos[1];
+        else if(direction == 2)
+            return pos[0] + '-' + (parseInt(pos[1]) + 1);
+        else if(direction == 3)
+            return (parseInt(pos[0]) - 1) + '-' + pos[1];
     }
 
     build_grid($target)
@@ -85,12 +110,15 @@ class Station
 
     build_station($target)
     {
-        this.resize_target($target);
+        $(window).on('resize', () => {
+            this.resize_target($target);
+        });
         this.build_grid($target);
         $.post(BASE_PATH + '/get_station', {
             'id_station': ID_STATION
         }, (data) => {
             if(data.res) this.add_tracks(data.data);
+            this.resize_target($target);
         }, 'json');
     }
 
@@ -99,12 +127,12 @@ class Station
         return new TrackContainer(position);
     }
 
-    create_track_item(id, type, angle, pos, drives, drive_count)
+    create_track_item(item)
     {
-        if(drive_count === "0")
-            return new TrackItem(id, type, angle, pos, drives);
+        if(item.drive_count === "0")
+            return new UndrivenTrackItem(item);
         else
-            return new DrivenTrackItem(id, type, angle, pos, drives);
+            return new DrivenTrackItem(item);
     }
 
     get_grid_count()
@@ -114,8 +142,12 @@ class Station
 
     resize_target($target)
     {
-        $target.width(this._item_size * this._col_count);
-        $target.height(this._item_size * this._row_count);
+        var item_size = parseInt(($('.station-container').innerWidth() - 1) / this._col_count);
+        if(item_size > this._item_size) item_size = this._item_size;
+        $target.innerWidth(item_size * this._col_count);
+        $target.innerHeight(item_size * this._row_count);
+        $target.children('.track-container').outerWidth(item_size).outerHeight(item_size);
+        $target.find('.track-item').width(item_size).height(item_size);
     }
 }
 Station.ecos = new EcosCom();
@@ -185,9 +217,9 @@ class ConfigStation extends Station
         return new ConfigTrackContainer(position);
     }
 
-    create_track_item(id, type, angle, pos, drives)
+    create_track_item(item)
     {
-        return new ConfigTrackItem(id, type, angle, pos, drives);
+        return new ConfigTrackItem(item);
     }
 }
 
@@ -224,6 +256,11 @@ class TrackContainer
     get_track_item()
     {
         return this._track_item;
+    }
+
+    has_track_item()
+    {
+        return (this._track_item !== null);
     }
 
     get_position()
@@ -274,7 +311,7 @@ class ConfigTrackContainer extends TrackContainer
             if(old_pos === "" || type === "") return;
             if(old_pos === "null")
             {
-                trackItem = new ConfigTrackItem(null, type, 0, this._position, []);
+                trackItem = new ConfigTrackItem({id: null, id_track_item: type, angle: 0, position: this._position, drives: [], connection: "[]"});
             }
             else
             {
@@ -310,14 +347,23 @@ class ConfigTrackContainer extends TrackContainer
 
 class TrackItem
 {
-    constructor(id, type, angle, position, drives)
+    constructor(item)
     {
-        this._id = id;
-        this._type = type;
-        this._angle = parseInt(angle);
-        this._position = position;
-        this._drives = drives;
+        this._id = item.id;
+        this._type = item.id_track_item;
+        this._angle = parseInt(item.angle);
+        this._position = item.position;
+        this._drives = item.drives;
+        this._connection = JSON.parse(item.connection);
+        this._neighbours = [];
         this._$html = null;
+    }
+
+    add_neighbours(item1, item2)
+    {
+        if(item1 === null || item2 === null)
+            return;
+        this._neighbours.push([item1, item2]);
     }
 
     append_html($target)
@@ -329,7 +375,7 @@ class TrackItem
             $('<div/>', {
                 'id': id,
                 'class': 'track-item track-' + this._type
-            })
+            }).text(this._id)
         );
         this._$html = $('#' + id);
         this.update_rotation();
@@ -337,6 +383,45 @@ class TrackItem
             if(drive === null) return;
             this.init_state(drive);
         });
+    }
+
+    get_connection()
+    {
+        var res = [];
+        this._connection.forEach((con, index) => {
+            var delta = this._angle / 90;
+            var con_s = con[0] - delta;
+            var con_e = con[1] - delta;
+            if(con_s < 0) con_s += 4;
+            if(con_e < 0) con_e += 4;
+            res.push([con_s, con_e]);
+        })
+        return res;
+    }
+
+    get_neighbours()
+    {
+        return this._neighbours;
+    }
+
+    get_id()
+    {
+        return this._id;
+    }
+
+    get_position()
+    {
+        return this._position;
+    }
+
+    get_drive_count()
+    {
+        return this._drives.length;
+    }
+
+    get_drive(idx)
+    {
+        return this._drives[idx];
     }
 
     set_position(position)
@@ -352,8 +437,8 @@ class TrackItem
     set_wait_state(drive_number)
     {
         this._$html.addClass('pending-' + drive_number);
-        this._$html.removeClass('state-' + drive_number + '-' + DrivenTrackItem.ecos_states[0]);
-        this._$html.removeClass('state-' + drive_number + '-' + DrivenTrackItem.ecos_states[1]);
+        this._$html.removeClass('state-' + drive_number + '-0');
+        this._$html.removeClass('state-' + drive_number + '-1');
     }
 
     update_rotation()
@@ -363,11 +448,85 @@ class TrackItem
 }
 TrackItem.counter = 0;
 
+class UndrivenTrackItem extends TrackItem
+{
+    constructor(item)
+    {
+        super(item);
+    }
+
+    append_html($target)
+    {
+        super.append_html($target);
+        this._$html.on('click', (e) => {
+            var routes = [];
+            var route = [];
+            if(UndrivenTrackItem.route_start === null)
+                UndrivenTrackItem.route_start = this;
+            else
+            {
+                UndrivenTrackItem.compute_route(UndrivenTrackItem.route_start, this._id, route, routes);
+                UndrivenTrackItem.route_start = null;
+                if(routes.length === 1)
+                {
+                    JSON.parse(routes[0]).forEach((item) => {
+                        var track_item = TrackContainer.grid[item.pos].get_track_item();
+                        var idx, pos, zeros;
+                        var state = parseInt(item.state)
+                        var bin_str = state.toString(2);
+                        if(item.drive_count == 0) return;
+                        zeros = new Array(parseInt(item.drive_count) - bin_str.length).fill(0).join();
+                        bin_str = zeros + bin_str;
+                        for(idx = 0; idx < bin_str.length; idx++)
+                        {
+                            pos = idx;
+                            // pos = bin_str.length - idx - 1;
+                            state = parseInt(bin_str.charAt(pos));
+                            track_item.set_switch_state(track_item.get_drive(idx), state);
+                        }
+                    });
+                }
+                routes.forEach((route) => {
+                    console.log(JSON.parse(route));
+                });
+            }
+        });
+    }
+
+    static compute_route(item, end_id, route, routes)
+    {
+        var cons = item.get_neighbours();
+        var last_item = route[route.length - 1];
+        route.push({id:item.get_id(), pos:item.get_position(), state:0, drive_count:item.get_drive_count()});
+        if(item.get_id() === end_id)
+        {
+            routes.push(JSON.stringify(route));
+            return;
+        }
+        cons.forEach((con, index) => {
+            var next_items = [];
+            if(last_item === undefined)
+                next_items = [con[0], con[1]];
+            else if(con[0].get_id() === last_item.id)
+                next_items.push(con[1]);
+            else if(con[1].get_id() === last_item.id)
+                next_items.push(con[0]);
+            next_items.forEach((next_item) => {
+                route[route.length - 1].state = index;
+                UndrivenTrackItem.compute_route(next_item, end_id, route, routes);
+                route.pop();
+            });
+
+        });
+    }
+}
+UndrivenTrackItem.route_start = null;
+
 class DrivenTrackItem extends TrackItem
 {
-    constructor(id, type, angle, position, drives)
+    constructor(item)
     {
-        super(id, type, angle, position, drives);
+        super(item);
     }
 
     append_html($target)
@@ -404,7 +563,7 @@ class DrivenTrackItem extends TrackItem
                 bin_str = zeros + bin_str;
                 for(var j = 0; j < state_count; j++)
                 {
-                    var state_item = "state-" + j + '-' + DrivenTrackItem.ecos_states[bin_str[j]];
+                    var state_item = "state-" + j + '-' + bin_str[j];
                     state_items.push(state_item);
                     if(!this._$html.hasClass(state_item))
                         state_set = false;
@@ -415,7 +574,7 @@ class DrivenTrackItem extends TrackItem
             if(states.length === 1)
             {
                 var elems = states[0][0].split('-');
-                this.set_switch_state(this._drives[elems[1]], elems[2]);
+                this.set_switch_state(this._drives[elems[1]], parseInt(elems[2]));
             }
             else
             {
@@ -426,7 +585,7 @@ class DrivenTrackItem extends TrackItem
                             state_items.forEach((item, index) => {
                                 if(this._$html.hasClass(item)) return;
                                 var elems = item.split('-');
-                                this.set_switch_state(this._drives[elems[1]], elems[2]);
+                                this.set_switch_state(this._drives[elems[1]], parseInt(elems[2]));
                             });
                             $selection_box.remove();
                             this._$html.removeClass('track-item-modal');
@@ -449,37 +608,49 @@ class DrivenTrackItem extends TrackItem
     get_switch_state(drive)
     {
         Station.ecos.send_cmd('get', 11, ['switch[DCC' + drive.addr + 'r]'], (data, err) => {
-            this.update_state_get(data, drive.drive_number);
+            this.update_state_get(data, drive);
             this._$html.removeClass('no-state-' + drive.drive_number);
         });
     }
 
     set_switch_state(drive, state)
     {
-        Station.ecos.send_cmd('set', 11, ['switch[DCC' + drive.addr + state + ']'], (data, err) => {
-            this.set_wait_state(drive.drive_number);
-        });
+        if(drive === null) return;
+        state = this.normalize_state(drive, state);
+        Station.ecos.send_cmd(
+            'set',
+            11,
+            ['switch[DCC' + drive.addr + DrivenTrackItem.ecos_states[state] + ']'],
+            (data, err) => {
+                this.set_wait_state(drive.drive_number);
+            }
+        );
     }
 
-    update_state(state, idx)
+    normalize_state(drive, state)
     {
-        var state_inv;
-        state_inv = 1 - state;
-        if(this._drives[idx].is_inverted == 1)
-        {
-            state = state_inv;
-            state_inv = 1 - state_inv;
-        }
-        this._drives[idx].state = state;
-        this._$html.addClass('state-' + idx + '-' + DrivenTrackItem.ecos_states[state]);
-        this._$html.removeClass('pending-' + idx + ' state-' + idx + '-' + DrivenTrackItem.ecos_states[state_inv]);
+        if(drive.is_inverted == 1)
+            return this.invert_state(state);
+        return state;
     }
 
-    update_state_get(data, idx)
+    invert_state(state)
+    {
+        return 1 - state;
+    }
+
+    update_state(state, drive)
+    {
+        drive.state = this.normalize_state(drive, state);
+        this._$html.addClass('state-' + drive.drive_number + '-' + drive.state);
+        this._$html.removeClass('pending-' + drive.drive_number
+            + ' state-' + drive.drive_number + '-' + this.invert_state(drive.state));
+    }
+
+    update_state_get(data, drive)
     {
         var state = parseInt(data[0].switch)
-        this.update_state(state, idx)
-
+        this.update_state(state, drive)
     }
 
     update_state_event(data)
@@ -499,7 +670,7 @@ class DrivenTrackItem extends TrackItem
             pos = idx;
             // pos = bin_str.length - idx - 1;
             state = parseInt(bin_str.charAt(pos));
-            this.update_state(state, idx);
+            this.update_state(state, this._drives[idx]);
         }
     }
 }
@@ -507,9 +678,9 @@ DrivenTrackItem.ecos_states = ['g', 'r'];
 
 class DraggableTrackItem extends TrackItem
 {
-    constructor(id, type, angle, position, drives)
+    constructor(item)
     {
-        super(id, type, angle, position, drives);
+        super(item);
     }
 
     append_html($target)
@@ -525,9 +696,9 @@ class DraggableTrackItem extends TrackItem
 
 class ConfigTrackItem extends DraggableTrackItem
 {
-    constructor(id, type, angle, position, drives)
+    constructor(item)
     {
-        super(id, type, angle, position, drives);
+        super(item);
     }
 
     dragleave()
@@ -638,7 +809,7 @@ class LibraryTrackItem extends DraggableTrackItem
 {
     constructor(type)
     {
-        super('lib', type, 0, null, []);
+        super({id: 'lib', id_track_item: type, angle: 0, position: null, drives: [], connection: "[]"});
     }
 
     append_html($target)
