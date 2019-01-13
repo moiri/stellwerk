@@ -1,11 +1,11 @@
 -- phpMyAdmin SQL Dump
--- version 4.6.6deb5
+-- version 4.6.6deb4
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost:3306
--- Generation Time: Jan 07, 2019 at 12:51 AM
--- Server version: 5.7.24-0ubuntu0.18.04.1
--- PHP Version: 7.2.10-0ubuntu0.18.04.1
+-- Generation Time: Jan 07, 2019 at 06:11 PM
+-- Server version: 10.1.37-MariaDB-0+deb9u1
+-- PHP Version: 7.0.33-0+deb9u1
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 SET time_zone = "+00:00";
@@ -39,8 +39,30 @@ CREATE TABLE `drive_instances` (
 --
 
 INSERT INTO `drive_instances` (`id`, `addr`, `id_instance`, `drive_number`, `is_inverted`) VALUES
+(20007, 14, 7, 0, 0),
+(20008, 15, 9, 0, 0),
 (20022, 11, 14, 0, 0),
-(20022, 12, 14, 1, 0);
+(20022, 12, 14, 1, 0),
+(20014, 20, 42, 0, 0),
+(20012, 18, 44, 0, 0),
+(20011, 17, 45, 0, 0),
+(20009, 16, 62, 0, 0),
+(20013, 19, 66, 0, 0),
+(20006, 13, 89, 0, 0),
+(20018, 1, 97, 0, 0),
+(20029, 4, 98, 0, 0),
+(20052, 9, 100, 0, 0),
+(20050, 6, 108, 0, 0),
+(20050, 7, 108, 1, 0),
+(20053, 10, 109, 0, 0),
+(20045, 21, 113, 0, 0),
+(20032, 8, 115, 0, 0),
+(20047, 23, 116, 0, 0),
+(20048, 24, 117, 0, 0),
+(20046, 22, 120, 0, 0),
+(20001, 2, 150, 0, 0),
+(20002, 3, 152, 0, 0),
+(20049, 5, 155, 0, 0);
 
 -- --------------------------------------------------------
 
@@ -109,7 +131,6 @@ INSERT INTO `instances` (`id`, `id_station`, `id_track_item`, `angle`, `position
 (76, 1, 1, 0, '3-8', NULL, NULL),
 (79, 1, 1, 0, '4-12', NULL, NULL),
 (80, 1, 6, 0, '4-13', NULL, NULL),
-(82, 1, 1, 0, '2-2', NULL, NULL),
 (83, 1, 6, 180, '3-2', NULL, NULL),
 (84, 1, 1, 0, '2-1', NULL, NULL),
 (85, 1, 2, 90, '2-0', NULL, NULL),
@@ -212,7 +233,8 @@ INSERT INTO `instances` (`id`, `id_station`, `id_track_item`, `angle`, `position
 (191, 2, 7, 90, '3-2', NULL, NULL),
 (192, 2, 7, 180, '1-6', NULL, NULL),
 (193, 1, 1, 0, '0-5', NULL, NULL),
-(194, 1, 1, 0, '4-5', NULL, NULL);
+(194, 1, 1, 0, '4-5', NULL, NULL),
+(195, 1, 1, 0, '2-2', NULL, NULL);
 
 -- --------------------------------------------------------
 
@@ -301,7 +323,7 @@ ALTER TABLE `track_items`
 -- AUTO_INCREMENT for table `instances`
 --
 ALTER TABLE `instances`
-  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=195;
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=196;
 --
 -- AUTO_INCREMENT for table `station`
 --
