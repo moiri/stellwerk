@@ -655,6 +655,31 @@ class DrivenTrackItem extends TrackItem
 
     update_state_event(data)
     {
+        var state = parseInt(data[0].state)
+        if(state === 0)
+        {
+            this.update_state(0, this._drives[0]);
+            this.update_state(0, this._drives[1]);
+        }
+        else if(state === 3)
+        {
+            this.update_state(0, this._drives[0]);
+            this.update_state(1, this._drives[1]);
+        }
+        else if(state === 2)
+        {
+            this.update_state(1, this._drives[0]);
+            this.update_state(0, this._drives[1]);
+        }
+        else if(state === 1)
+        {
+            this.update_state(1, this._drives[0]);
+            this.update_state(1, this._drives[1]);
+        }
+    }
+
+    _update_state_event(data)
+    {
         // the geniuses at ESU decided to use different addresses but the same
         // id for switching articles with multiple drives. As views are
         // registered on ids I have to decompose the state number (as it can
