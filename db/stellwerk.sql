@@ -282,7 +282,7 @@ INSERT INTO `track_items` (`id`, `name`, `img_name`, `drive_count`, `position`, 
 (3, 'Weiche links', 'weiche_links', 1, 40, '[[0,2],[1,2]]'),
 (4, 'Weiche rechts', 'weiche_rechts', 1, 50, '[[0,2],[2,3]]'),
 (5, 'Engländer', 'englaender', 2, 60, '[[0,2],[2,3],[0,1],[1,3]]'),
-(6, 'Schluss', 'schluss', 0, 30, '[]'),
+(6, 'Schluss', 'schluss', 0, 30, '[[0,null]]'),
 (7, 'Doppel Diaginale', 'diagonal_2', 0, 25, '[[0,1],[2,3]]');
 
 --
