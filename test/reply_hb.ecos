@@ -1,0 +1,48 @@
+<REPLY get(11, switch[DCC11r])>
+11 switch[1]
+<END 0 (OK)>
+<REPLY get(11, switch[DCC12r])>
+11 switch[1]
+<END 0 (OK)>
+<REPLY request(20007, view)>
+<END 0 (OK)>
+<REPLY request(20008, view)>
+<END 0 (OK)>
+<REPLY request(20022, view)>
+<END 0 (OK)>
+<REPLY get(11, switch[DCC20r])>
+11 switch[1]
+<END 0 (OK)>
+<REPLY request(20014, view)>
+<END 0 (OK)>
+<REPLY get(11, switch[DCC18r])>
+11 switch[0]
+<END 0 (OK)>
+<REPLY request(20012, view)>
+<END 0 (OK)>
+<REPLY get(11, switch[DCC17r])>
+11 switch[0]
+<END 0 (OK)>
+<REPLY request(20011, view)>
+<END 0 (OK)>
+<REPLY get(11, switch[DCC14r])>
+11 switch[1]
+<END 0 (OK)>
+<REPLY get(11, switch[DCC15r])>
+11 switch[1]
+<END 0 (OK)>
+<REPLY get(11, switch[DCC16r])>
+11 switch[1]
+<END 0 (OK)>
+<REPLY request(20009, view)>
+<END 0 (OK)>
+<REPLY get(11, switch[DCC19r])>
+11 switch[1]
+<END 0 (OK)>
+<REPLY request(20013, view)>
+<END 0 (OK)>
+<REPLY get(11, switch[DCC13r])>
+11 switch[0]
+<END 0 (OK)>
+<REPLY request(20006, view)>
+<END 0 (OK)>
