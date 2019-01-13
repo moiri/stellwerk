@@ -57,6 +57,15 @@ class Station
         this._item_size = 64;
     }
 
+    get_track_item(con, pos)
+    {
+        var npos = this.get_next_position(con, pos);
+        var cont = TrackContainer.grid[npos];
+        if(cont !== undefined)
+            return cont.get_track_item();
+        return null;
+    }
+
     add_tracks(data)
     {
         data.forEach((item, index) => {
@@ -72,13 +81,8 @@ class Station
                 item = container.get_track_item();
                 item.get_connection().forEach((con, index) => {
                     var pos = key.split('-');
-                    var npos1 = this.get_next_position(con[0], pos);
-                    var npos2 = this.get_next_position(con[1], pos);
-                    var cont1 = TrackContainer.grid[npos1];
-                    var cont2 = TrackContainer.grid[npos2];
-                    if(cont1 === undefined || cont2 === undefined)
-                        return;
-                    item.add_neighbours(cont1.get_track_item(), cont2.get_track_item());
+                    item.add_neighbours(this.get_track_item(con[0], pos),
+                        this.get_track_item(con[1], pos));
                 });
             }
         }
@@ -361,8 +365,6 @@ class TrackItem
 
     add_neighbours(item1, item2)
     {
-        if(item1 === null || item2 === null)
-            return;
         this._neighbours.push([item1, item2]);
     }
 
@@ -385,18 +387,29 @@ class TrackItem
         });
     }
 
+    clear()
+    {
+        this._$html.removeClass('highlight-route');
+    }
+
     get_connection()
     {
         var res = [];
         this._connection.forEach((con, index) => {
-            var delta = this._angle / 90;
-            var con_s = con[0] - delta;
-            var con_e = con[1] - delta;
-            if(con_s < 0) con_s += 4;
-            if(con_e < 0) con_e += 4;
-            res.push([con_s, con_e]);
+            res.push([this.rotate_connection(con[0]), this.rotate_connection(con[1])]);
         })
         return res;
+    }
+
+    rotate_connection(con)
+    {
+        var delta = this._angle / 90;
+        if(con !== null)
+        {
+            con -= delta;
+            if(con < 0) con += 4;
+        }
+        return con;
     }
 
     get_neighbours()
@@ -422,6 +435,11 @@ class TrackItem
     get_drive(idx)
     {
         return this._drives[idx];
+    }
+
+    highlight()
+    {
+        this._$html.addClass('highlight-route');
     }
 
     set_position(position)
@@ -462,10 +480,22 @@ class UndrivenTrackItem extends TrackItem
             var routes = [];
             var route = [];
             if(UndrivenTrackItem.route_start === null)
+            {
+                this.highlight();
                 UndrivenTrackItem.route_start = this;
+            }
             else
             {
                 UndrivenTrackItem.compute_route(UndrivenTrackItem.route_start, this._id, route, routes);
+                routes.forEach((j_route) => {
+                    var route = JSON.parse(j_route);
+                    console.log(route);
+                    route.forEach((item) => {
+                        TrackContainer.grid[item.pos].get_track_item().highlight();
+                    });
+                });
+                if(routes.length === 0)
+                    UndrivenTrackItem.route_start.clear();
                 UndrivenTrackItem.route_start = null;
                 if(routes.length === 1)
                 {
@@ -486,9 +516,6 @@ class UndrivenTrackItem extends TrackItem
                         }
                     });
                 }
-                routes.forEach((route) => {
-                    console.log(JSON.parse(route));
-                });
             }
         });
     }
@@ -507,11 +534,12 @@ class UndrivenTrackItem extends TrackItem
             var next_items = [];
             if(last_item === undefined)
                 next_items = [con[0], con[1]];
-            else if(con[0].get_id() === last_item.id)
+            else if(con[0] !== null && con[0].get_id() === last_item.id)
                 next_items.push(con[1]);
-            else if(con[1].get_id() === last_item.id)
+            else if(con[1] !== null && con[1].get_id() === last_item.id)
                 next_items.push(con[0]);
             next_items.forEach((next_item) => {
+                if(next_item === null) return;
                 route[route.length - 1].state = index;
                 UndrivenTrackItem.compute_route(next_item, end_id, route, routes);
                 route.pop();

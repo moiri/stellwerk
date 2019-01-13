@@ -49,3 +49,7 @@ a.card:hover
 {
     background-color: #f8d7da;
 }
+.highlight-route
+{
+    background-color: #cce5ff;
+}
