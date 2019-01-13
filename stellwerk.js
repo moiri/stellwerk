@@ -25,6 +25,7 @@ io.on('connection', function(socket) {
             message_id++;
         }
         cb(id);
+        console.log("data sent");
         console.log(msg);
         socket.join(room);
         if(ecos.is_view_request(data))
@@ -36,24 +37,25 @@ io.on('connection', function(socket) {
 });
 
 ecos_client.on('data', (data) => {
-    var res = ecos.parse_msg(data.toString());
-    var room = encodeURIComponent(res.header.cmd);
-    console.log(data.toString());
-    if(res.header.type === "REPLY")
-    {
-        res.message_id = open_requests[room];
-        delete open_requests[room];
-        io.to(room).emit('ecos_reply', res);
-        io.in(room).clients((error, clients) => {
-            clients.forEach(function (socket_id) {
-                io.sockets.sockets[socket_id].leave(room);
+    var sets = ecos.parse_msg(data.toString());
+    sets.forEach((res, index) => {
+        var room = encodeURIComponent(res.header.cmd);
+        if(res.header.type === "REPLY")
+        {
+            res.message_id = open_requests[room];
+            delete open_requests[room];
+            io.to(room).emit('ecos_reply', res);
+            io.in(room).clients((error, clients) => {
+                clients.forEach(function (socket_id) {
+                    io.sockets.sockets[socket_id].leave(room);
+                });
             });
-        });
-    }
-    else if(res.header.type === "EVENT")
-    {
-        io.to(room).emit('ecos_event', res);
-    }
+        }
+        else if(res.header.type === "EVENT")
+        {
+            io.to(room).emit('ecos_event', res);
+        }
+    });
 });
 
 io.listen(3000);

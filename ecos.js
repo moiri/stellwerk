@@ -1,68 +1,66 @@
 exports.parse_msg = function(data)
 {
-    const regex_header = /<(REPLY|EVENT) (.*\(.*\)|\d*)>/gm;
-    const regex_footer = /<(END) (\d+) \((.*)?\)>/gm;
+    const regex_header = /<(REPLY|EVENT) (.*\(.*\)|\d*)>/g;
+    const regex_footer = /<(END) (\d+) \((.*)\)>/g;
+    const regex_arg = /(.*)\[(.*)\]/;
+    const regex_split = /\s+(?![^\[]*\])/;
     var lines = data.split(/\r?\n/);
-    var res = {
-        msg: data,
-        err: { state: false, server: [], ecos: null },
-        header: null,
-        body: null
-    };
-    var header = "", footer = "", body_lines = [], body = [];
-    var line = 1;
-    var f, h;
+    var sets = [];
+    var set, is_body = false;
+
+    console.log("data received");
+    console.log(data);
+
     if(lines.length < 2)
         res.err.server.push("bad response format");
 
-    // parse header
-    if(h = regex_header.exec(lines[0]))
-    {
-        if(h.length === 3)
-            header = {
-                type: h[1],
-                cmd: h[2],
+    lines.forEach((line, index) => {
+        var args, body_item, f, h;
+        if(line.match(regex_header))
+        {
+            h = regex_header.exec(line);
+            set = {
+                err: { state: false, server: [], ecos: null },
+                header: null,
+                body: null
             };
-    }
-    else
-        res.err.server.push("bad header format");
+            if(h.length === 3)
+            {
+                set.header = { type: h[1], cmd: h[2] };
+                set.body = [];
+            }
+            else
+                set.err.server.push("bad header format");
+            is_body = true;
+        }
+        else if(f = line.match(regex_footer))
+        {
+            f = regex_footer.exec(line);
+            if(f.length === 4 && f[1] === 'END')
+                set.err.ecos = { error_code: f[2], error: f[3] };
+            else
+                set.err.server.push("bad footer format");
+            if(set.err.ecos.error_code != 0 || set.err.server.length > 0)
+                set.err.state = true;
+            sets.push(set);
+            is_body = false
+        }
+        else if(is_body)
+        {
+            body_item = {};
+            args = line.split(regex_split);
+            body_item['id'] = parseInt(args[0]);
+            args.shift();
 
-    // extract body
-    for(line = 1; line < lines.length-1; line++)
-        body_lines.push(lines[line]);
-
-    // parse footer
-    f = regex_footer.exec(lines[lines.length-1]);
-    if(f !== null && f.length === 4 && f[1] === 'END')
-        footer = {
-            error_code: f[2],
-            error: f[3]
-        };
-    else
-        res.err.server.push("bad footer format");
-
-    // parse body
-    body_lines.forEach(function(line, index) {
-        const regex_arg = /(.*)\[(.*)\]/;
-        const regex_split = /\s+(?![^\[]*\])/;
-        var body_item = {};
-        var args = line.split(regex_split);
-        body_item['id'] = parseInt(args[0]);
-        args.shift();
-
-        args.forEach(function(arg, index) {
-            var item = regex_arg.exec(arg);
-            if(item) body_item[item[1]] = item[2].replace(/"/g, '');
-        });
-        body.push(body_item);
+            args.forEach(function(arg, index) {
+                var item = regex_arg.exec(arg);
+                if(item) body_item[item[1]] = item[2].replace(/"/g, '');
+            });
+            set.body.push(body_item);
+        }
     });
 
-    res.header = header;
-    res.err.ecos = footer;
-    res.body = body;
-    if(res.err.ecos.error_code != 0 || res.err.server.length > 0)
-        res.err.state = true;
-    return res;
+    return sets;
 }
 
 exports.create_cmd = function(data)
