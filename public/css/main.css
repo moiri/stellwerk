@@ -65,3 +65,13 @@ a.card:hover
 {
     background-color: #d4edda;
 }
+.accept
+{
+    background-image: url("/stellwerk/img/accept.png");
+    background-size: cover;
+}
+.decline
+{
+    background-image: url("/stellwerk/img/decline.png");
+    background-size: cover;
+}

@@ -453,7 +453,10 @@ class TrackItem
 
     show_box(route)
     {
-        var $selection_box = $('<div/>', {'class': 'track-item-selection-box border d-flex'});
+        var $selection_box = $('<div/>', {
+            'class': 'track-item-selection-box border d-flex',
+            'style': 'transform: rotate(-' + this._angle + 'deg)'
+        });
         $selection_box.append(
             $('<div/>', {'class': 'track-item m-1 inline-block accept'}).on('click', (e) => {
                 e.stopPropagation();
@@ -503,10 +506,10 @@ class TrackItem
             route_keys = Object.keys(UndrivenTrackItem.active_routes);
             if(route_keys.length === 1)
             {
+                $('.' + css_route).off('click.route');
                 final_index = UndrivenTrackItem.active_routes[route_keys[0]];
                 $items_select.addClass('unique');
                 this.show_box(JSON.parse(routes[final_index]));
-                $('.' + css_route).off('click.route');
             }
         });
     }
