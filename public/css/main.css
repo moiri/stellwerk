@@ -24,7 +24,7 @@ a.card:hover
     background-color: #cce5ff;
 }
 
-.track-item-modal
+.track-item-modal, .route-modal
 {
     z-index: 100;
 }
@@ -49,7 +49,19 @@ a.card:hover
 {
     background-color: #f8d7da;
 }
-.highlight-route
+.route
 {
-    background-color: #cce5ff;
+    background-color: #e2e3e5;
+}
+.route.active
+{
+    background-color: #bdbebf;
+}
+.route.active:hover
+{
+    background-color: #979899;
+}
+.route.active.unique, .route.unique
+{
+    background-color: #d4edda;
 }

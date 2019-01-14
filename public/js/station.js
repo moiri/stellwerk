@@ -389,7 +389,12 @@ class TrackItem
 
     clear()
     {
-        this._$html.removeClass('highlight-route');
+        this._$html.removeClass('route');
+        this._$html.removeClass('unique');
+        this._$html.removeClass('active');
+        this._$html.removeClass (function (index, className) {
+            return (className.match (/(^|\s)route-\S+/g) || []).join(' ');
+        });
     }
 
     get_connection()
@@ -437,9 +442,73 @@ class TrackItem
         return this._drives[idx];
     }
 
-    highlight()
+    highlight(css_route, index)
     {
-        this._$html.addClass('highlight-route');
+        this._$html.addClass(css_route);
+        if(index !== undefined)
+            this._$html.addClass(css_route + '-' + index);
+        else
+            this._$html.addClass('unique');
+    }
+
+    show_box(route)
+    {
+        var $selection_box = $('<div/>', {'class': 'track-item-selection-box border d-flex'});
+        $selection_box.append(
+            $('<div/>', {'class': 'track-item m-1 inline-block accept'}).on('click', (e) => {
+                e.stopPropagation();
+                $selection_box.remove();
+                this._$html.removeClass('route-modal');
+                UndrivenTrackItem.set_route(route);
+            })
+        ).append(
+            $('<div/>', {'class': 'track-item m-1 inline-block decline'}).on('click', (e) => {
+                e.stopPropagation();
+                $selection_box.remove();
+                this._$html.removeClass('route-modal');
+                UndrivenTrackItem.clear_route(route);
+            })
+        );
+        this._$html.append($selection_box);
+        this._$html.addClass('route-modal');
+    }
+
+    select_route(routes)
+    {
+        var css_route = UndrivenTrackItem.css_route;
+        if(this._$html.hasClass(css_route)) return;
+        this._$html.on('click.route', (e) => {
+            var $items = $('.' + css_route);
+            var $items_unselect = $items.not('.active');
+            var $items_select = $items.filter('.active');
+            var routes_to_remove = [];
+            var route_keys, final_index;
+            $items_unselect.removeClass(css_route);
+            $items_unselect.off('mouseenter.route');
+            $items_unselect.off('mouseleave.route');
+            $items_unselect.each(function(idx) {
+                var i, css;
+                for(i = 0; i < routes.length; i++)
+                {
+                    css = css_route + '-' + i;
+                    if($(this).hasClass(css))
+                        if(!routes_to_remove.includes(css))
+                            routes_to_remove.push(css);
+                }
+            });
+            routes_to_remove.forEach((css) => {
+                $items.removeClass(css);
+                delete UndrivenTrackItem.active_routes[css];
+            });
+            route_keys = Object.keys(UndrivenTrackItem.active_routes);
+            if(route_keys.length === 1)
+            {
+                final_index = UndrivenTrackItem.active_routes[route_keys[0]];
+                $items_select.addClass('unique');
+                this.show_box(JSON.parse(routes[final_index]));
+                $('.' + css_route).off('click.route');
+            }
+        });
     }
 
     set_position(position)
@@ -473,51 +542,104 @@ class UndrivenTrackItem extends TrackItem
         super(item);
     }
 
+    end_route()
+    {
+        var routes = [];
+        var route = [];
+        var css_route = UndrivenTrackItem.css_route;
+        UndrivenTrackItem.route_state = 2;
+        UndrivenTrackItem.compute_route(UndrivenTrackItem.route_start, this._id, route, routes);
+        if(routes.length === 0)
+        {
+            UndrivenTrackItem.route_start.clear();
+            UndrivenTrackItem.reset_route_states();
+        }
+        else if(routes.length === 1)
+        {
+            route = JSON.parse(routes[0]);
+            UndrivenTrackItem.enable_route(route, routes);
+            this.show_box(route);
+        }
+        else
+        {
+            routes.forEach((j_route, index) => {
+                var route = JSON.parse(j_route);
+                var selector = '.' + css_route + '.' + css_route + '-' + index;
+                UndrivenTrackItem.active_routes[css_route + '-' + index] = index;
+                UndrivenTrackItem.enable_route(route, routes, index);
+                $(selector).on('mouseenter.route', (e) => {
+                    $(selector).addClass('active');
+                });
+                $(selector).on('mouseleave.route', (e) => {
+                    $(selector).removeClass('active');
+                });
+            });
+        }
+    }
+
+    static enable_route(route, routes, index)
+    {
+        route.forEach((item) => {
+            var track_item = TrackContainer.grid[item.pos].get_track_item();
+            if(index !== undefined)
+                track_item.select_route(routes);
+            track_item.highlight(UndrivenTrackItem.css_route, index);
+        });
+    }
+
+    start_route()
+    {
+        this.highlight(UndrivenTrackItem.css_route);
+        UndrivenTrackItem.route_start = this;
+        UndrivenTrackItem.route_state = 1;
+    }
+
     append_html($target)
     {
         super.append_html($target);
         this._$html.on('click', (e) => {
-            var routes = [];
-            var route = [];
-            if(UndrivenTrackItem.route_start === null)
+            if(UndrivenTrackItem.route_state === 0)
+                this.start_route();
+            else if(UndrivenTrackItem.route_state === 1)
+                this.end_route();
+        });
+    }
+
+    static reset_route_states()
+    {
+        UndrivenTrackItem.route_state = 0;
+        UndrivenTrackItem.route_start = null;
+        UndrivenTrackItem.active_routes = {};
+    }
+
+    static clear_route(route)
+    {
+        UndrivenTrackItem.reset_route_states();
+        route.forEach((item) => {
+            var track_item = TrackContainer.grid[item.pos].get_track_item();
+            track_item.clear();
+        });
+    }
+
+    static set_route(route)
+    {
+        route.forEach((item) => {
+            var track_item = TrackContainer.grid[item.pos].get_track_item();
+            var idx, pos, zeros;
+            var state = parseInt(item.state)
+            var bin_str = state.toString(2);
+            if(item.drive_count == 0) return;
+            zeros = new Array(parseInt(item.drive_count) - bin_str.length).fill(0).join();
+            bin_str = zeros + bin_str;
+            for(idx = 0; idx < bin_str.length; idx++)
             {
-                this.highlight();
-                UndrivenTrackItem.route_start = this;
-            }
-            else
-            {
-                UndrivenTrackItem.compute_route(UndrivenTrackItem.route_start, this._id, route, routes);
-                routes.forEach((j_route) => {
-                    var route = JSON.parse(j_route);
-                    console.log(route);
-                    route.forEach((item) => {
-                        TrackContainer.grid[item.pos].get_track_item().highlight();
-                    });
-                });
-                if(routes.length === 0)
-                    UndrivenTrackItem.route_start.clear();
-                UndrivenTrackItem.route_start = null;
-                if(routes.length === 1)
-                {
-                    JSON.parse(routes[0]).forEach((item) => {
-                        var track_item = TrackContainer.grid[item.pos].get_track_item();
-                        var idx, pos, zeros;
-                        var state = parseInt(item.state)
-                        var bin_str = state.toString(2);
-                        if(item.drive_count == 0) return;
-                        zeros = new Array(parseInt(item.drive_count) - bin_str.length).fill(0).join();
-                        bin_str = zeros + bin_str;
-                        for(idx = 0; idx < bin_str.length; idx++)
-                        {
-                            pos = idx;
-                            // pos = bin_str.length - idx - 1;
-                            state = parseInt(bin_str.charAt(pos));
-                            track_item.set_switch_state(track_item.get_drive(idx), state);
-                        }
-                    });
-                }
+                pos = idx;
+                // pos = bin_str.length - idx - 1;
+                state = parseInt(bin_str.charAt(pos));
+                track_item.set_switch_state(track_item.get_drive(idx), state);
             }
         });
+        UndrivenTrackItem.clear_route(route);
     }
 
     static compute_route(item, end_id, route, routes)
@@ -549,6 +671,9 @@ class UndrivenTrackItem extends TrackItem
     }
 }
 UndrivenTrackItem.route_start = null;
+UndrivenTrackItem.route_state = 0;
+UndrivenTrackItem.css_route = 'route';
+UndrivenTrackItem.active_routes = {};
 
 class DrivenTrackItem extends TrackItem
 {
@@ -578,6 +703,8 @@ class DrivenTrackItem extends TrackItem
         });
         this._$html.on('click', (e) => {
             if(this._$html.hasClass('track-item-modal'))
+                return;
+            if(this._$html.hasClass('route'))
                 return;
             var $selection_box = $('<div/>', {'class': 'track-item-selection-box border d-flex'});
             var state_count = this._drives.length;
