@@ -489,6 +489,7 @@ class TrackItem
             $items_unselect.removeClass(css_route);
             $items_unselect.off('mouseenter.route');
             $items_unselect.off('mouseleave.route');
+            $items_unselect.off('click.route');
             $items_unselect.each(function(idx) {
                 var i, css;
                 for(i = 0; i < routes.length; i++)
@@ -669,7 +670,6 @@ class UndrivenTrackItem extends TrackItem
                 UndrivenTrackItem.compute_route(next_item, end_id, route, routes);
                 route.pop();
             });
-
         });
     }
 }
