@@ -627,6 +627,7 @@ class UndrivenTrackItem extends TrackItem
 
     static set_route(route)
     {
+        var cmds = [];
         route.forEach((item) => {
             var track_item = TrackContainer.grid[item.pos].get_track_item();
             var idx, pos, zeros;
@@ -640,10 +641,15 @@ class UndrivenTrackItem extends TrackItem
                 pos = idx;
                 // pos = bin_str.length - idx - 1;
                 state = parseInt(bin_str.charAt(pos));
-                track_item.set_switch_state(track_item.get_drive(idx), state);
+                cmds.push({item: track_item, drive: track_item.get_drive(idx), state: state});
             }
         });
         UndrivenTrackItem.clear_route(route);
+        cmds.reverse().forEach((cmd, index) => {
+            setTimeout(() => {
+                cmd.item.set_switch_state(cmd.drive, cmd.state);
+            }, 200 * index);
+        });
     }
 
     static compute_route(item, end_id, route, routes)
