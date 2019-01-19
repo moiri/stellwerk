@@ -8,8 +8,7 @@ exports.parse_msg = function(data)
     var sets = [];
     var set, is_body = false;
 
-    console.log("data received");
-    console.log(data);
+    console.log("<-- " + data);
 
     if(lines.length < 2)
         res.err.server.push("bad response format");

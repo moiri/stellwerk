@@ -10,6 +10,7 @@ const ecos_client = net.createConnection({port: ECOS_PORT, host: ECOS_HOST}, () 
 });
 
 var open_requests = [];
+var views = [];
 var message_id = 0;
 
 io.on('connection', function(socket) {
@@ -25,14 +26,18 @@ io.on('connection', function(socket) {
             message_id++;
         }
         cb(id);
-        console.log("data sent");
-        console.log(msg);
         socket.join(room);
         if(ecos.is_view_request(data))
+        {
+            if(views.indexOf(data.id) >= 0)
+                return;
+            views.push(data.id);
             socket.join(data.id);
-        if(ecos.is_view_release(data))
+        }
+        else if(ecos.is_view_release(data))
             socket.leave(data.id);
         ecos_client.write(msg);
+        console.log("--> " + msg);
     });
 });
 
