@@ -35,7 +35,10 @@ io.on('connection', function(socket) {
             socket.join(data.id);
         }
         else if(ecos.is_view_release(data))
+        {
+            views.splice(views.indexOf(data.id), 1);
             socket.leave(data.id);
+        }
         ecos_client.write(msg);
         console.log("--> " + msg);
     });
