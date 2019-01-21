@@ -27,6 +27,7 @@ a.card:hover
 .track-item-modal, .route-modal
 {
     z-index: 100;
+    position: relative;
 }
 
 .track-container.dragover
