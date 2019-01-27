@@ -5,9 +5,16 @@ const ecos = require('./ecos');
 const ECOS_HOST = config.host;
 const ECOS_PORT = config.port;
 
-const ecos_client = net.createConnection({port: ECOS_PORT, host: ECOS_HOST}, () => {
+var interval = null;
+var ecos_client = new net.Socket();
+ecos_client.connect({port: ECOS_PORT, host: ECOS_HOST}, () => {
+    if(interval !== null)
+        clearInterval(interval);
     console.log('connected to server');
 });
+interval = setInterval(() => {
+    ecos_client.connect({port: ECOS_PORT, host: ECOS_HOST});
+}, 3000);
 
 var open_requests = [];
 var views = [];
@@ -70,6 +77,10 @@ io.listen(3000);
 
 ecos_client.on('end', () => {
   console.log('disconnected from server');
+});
+
+ecos_client.on('error', (err) => {
+    console.log(err);
 });
 
 process.on('SIGTERM', () => {
