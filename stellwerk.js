@@ -17,7 +17,6 @@ interval = setInterval(() => {
 }, 3000);
 
 var open_requests = [];
-var views = [];
 var message_id = 0;
 
 io.on('connection', function(socket) {
@@ -35,17 +34,9 @@ io.on('connection', function(socket) {
         cb(id);
         socket.join(room);
         if(ecos.is_view_request(data))
-        {
-            if(views.indexOf(data.id) >= 0)
-                return;
-            views.push(data.id);
             socket.join(data.id);
-        }
         else if(ecos.is_view_release(data))
-        {
-            views.splice(views.indexOf(data.id), 1);
             socket.leave(data.id);
-        }
         ecos_client.write(msg);
         console.log("--> " + msg);
     });
