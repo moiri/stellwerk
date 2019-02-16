@@ -73,16 +73,6 @@ a.card:hover
 {
     background-color: #d4edda;
 }
-.accept
-{
-    background-image: url("/img/accept.png");
-    background-size: cover;
-}
-.decline
-{
-    background-image: url("/img/decline.png");
-    background-size: cover;
-}
 
 .track-drive-number
 {

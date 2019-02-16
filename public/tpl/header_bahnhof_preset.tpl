@@ -9,6 +9,7 @@ $custom_js = array(
 );
 $custom_css = array(
     __DIR__ . "/css/library.css.tpl",
+    __DIR__ . "/css/buttons.css.tpl",
 );
 $js_includes = array(
     __DIR__ . "/js_includes/socket.io.js.tpl",
