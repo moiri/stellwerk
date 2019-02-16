@@ -360,6 +360,7 @@ class TrackItem
         this._drives = item.drives;
         this._connection = JSON.parse(item.connection);
         this._neighbours = [];
+        this._label = item.label;
         this._$html = null;
     }
 
@@ -600,7 +601,22 @@ class UndrivenTrackItem extends TrackItem
 
     append_html($target)
     {
+        var first = true;
+        var pos = "";
         super.append_html($target);
+        if(this._label !== "")
+        {
+            this._$html.append(
+                $('<div/>', {
+                    class: 'w-100 h-100',
+                    style: 'transform:rotate(-' + this._angle + 'deg)'
+                }).append(
+                    $('<div/>', {
+                        class: 'badge badge-primary track-number',
+                    }).text(this._label)
+                )
+            );
+        }
         this._$html.on('click', (e) => {
             if(UndrivenTrackItem.route_state === 0)
                 this.start_route();
@@ -694,7 +710,31 @@ class DrivenTrackItem extends TrackItem
     append_html($target)
     {
         var first = true;
+        var pos = "";
         super.append_html($target);
+        if(this._label !== "")
+        {
+            if(this._angle === 0 && this._$html.hasClass('track-4') ||
+                    this._angle === 270 && this._$html.hasClass('track-3'))
+                pos = "bottom: 0;";
+            else if(this._angle === 180 && this._$html.hasClass('track-4')
+                    || this._angle === 90 && this._$html.hasClass('track-3'))
+                pos = "right: 0;";
+            else if(this._angle === 270 && this._$html.hasClass('track-4')
+                    || this._angle === 180 && this._$html.hasClass('track-3'))
+                pos = "right: 0; bottom: 0;";
+            this._$html.append(
+                $('<div/>', {
+                    class: 'w-100 h-100',
+                    style: 'transform:rotate(-' + this._angle + 'deg)'
+                }).append(
+                    $('<div/>', {
+                        class: 'badge badge-pill track-drive-number m-1 badge-dark',
+                        style: pos,
+                    }).text(this._label)
+                )
+            );
+        }
         // multiple drives have the same id but only different addresses. Hence,
         // it's ok to just register events with the first drive.
         this._drives.forEach((drive, index) => {

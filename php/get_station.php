@@ -1,6 +1,6 @@
 <?php
     $fk = $_POST['id_station'] ?? null;
-$sql = "SELECT i.*, ti.drive_count, ti.connection FROM instances AS i
+    $sql = "SELECT i.*, ti.drive_count, ti.connection FROM instances AS i
         LEFT JOIN track_items AS ti ON ti.id = i.id_track_item
         WHERE id_station = :fk";
     $res = $db->query_db($sql, array(':fk' => $fk));
